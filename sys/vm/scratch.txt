@@ -1,0 +1,57 @@
+void map_phys_pg_vir_pg_range(u64int phys_pg_start, u64int phys_pg_end, u64int vir_pg_start)
+{
+	pdp_e* pdp_entry;
+	pd_e* pd_entry;
+	pt_e* pt_entry;
+
+	pdp_e* pdp_e_ptr = pdp_entries;
+	pd_e* pd_e_ptr = pd_entries;
+	pt_e* pt_e_ptr = pt_entries;
+
+	u16int pml4e_offset = 0x0;
+	u16int pdp_offset = 0x0;
+	u16int pd_offset = 0x0;
+	u16int pt_offset = 0x0;
+	/*u16int phys_offset = 0x0;*/
+	
+	u64int phys_pg = (u64int)phys_pg_start;
+	u64int vir_pg = (u64int)vir_pg_start;
+	for(; phys_pg < (u64int)phys_pg_end; phys_pg = phys_pg+PAGE_SIZE, vir_pg=vir_pg+PAGE_SIZE) {
+		pml4e_offset = ((vir_pg>>39)&0x1ff);
+		pdp_offset = ((vir_pg>>30)&0x1ff);
+		pd_offset = ((vir_pg>>21)&0x1ff);
+		pt_offset = ((vir_pg>>12)&0x1ff);
+
+		pml4_e* pml4e_entry = (pml4_e*)(pml_entries+pml4e_offset);
+		
+		/* The PDPE level */
+		if(is_present((u64int)pml4e_entry)){
+			pdp_entry = (pdp_e*)find_base_addr((u64int)pml4e_entry)+pdp_offset;
+		} else {
+			/* Create a new pdpe entry*/
+			pdp_entry = pdp_e_ptr++;
+			create_pdp_e(pdp_entry, pd_offset, 0x0, 0x1F, 0x00); 
+			set_base_addr(pml4e_entry, (u64int)pdp_entry);
+		}
+
+		/* The PD level */
+		if(is_present((u64int)pdp_entry)){
+			pd_entry = (pd_e*)find_base_addr((u64int)pdp_entry)+pd_offset;
+		} else {
+			/* Create new pde entry */
+			pd_entry = pd_e_ptr++;
+			create_pd_e(pd_entry, pt_offset, 0x0, 0x1F, 0x00);
+			set_base_addr(pdp_entry, (u64int)pd_entry);
+		}
+
+		/* The PT level */
+		if(is_present((u64int)pd_entry)){
+			pt_entry = (pt_e*)find_base_addr((u64int)pd_entry)+pt_offset;
+		} else {
+			/* Create new pte entry */
+			pt_entry = pt_e_ptr++;
+			create_pt_e(pt_entry, phys_pg, 0x0, 0x1F, 0x00);
+			set_base_addr(pd_entry, (u64int)pt_entry);
+		}
+	}
+}
