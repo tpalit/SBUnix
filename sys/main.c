@@ -120,9 +120,8 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 	*/
 	kprintf("The tarfs region: [%p to %p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
        	initialize_tss();
-	dump_tarfs_contents();
 	__asm__("sti\n\t");
-
+	dump_tarfs_contents();
 	//       	switch_to_user_mode();
 	while(1);
 }

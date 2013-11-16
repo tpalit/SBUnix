@@ -3,6 +3,7 @@
  */
 
 #include<common.h>
+#include<sys/proc_mgr.h>
 
 typedef u64int Elf64_Addr;
 typedef u64int Elf64_Off;
@@ -85,5 +86,12 @@ typedef struct
 	Elf64_Xword p_align; /* Alignment of segment */
 } Elf64_Phdr;
 
+u64int tarfs_atoi(char*, u8int);
+
 void load_elf_segment(Elf64_Ehdr* , Elf64_Phdr*);
 
+Elf64_Ehdr* find_elf(char*);
+
+void parse_load_elf_segments(Elf64_Ehdr*);
+
+task_struct* make_process_from_elf(char*);

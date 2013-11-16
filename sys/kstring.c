@@ -1,4 +1,4 @@
-#include<kstring.h>
+#include<sys/kstring.h>
 #include<common.h>
 
 int kstrcmp(char* str1, char* str2)

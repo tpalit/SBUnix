@@ -18,5 +18,5 @@ switch_to_user_mode:
 	pushfq
 	pushq $0x1b
 #	pushq $test_user_function
-	pushq %rdx
+	pushq %rdi
 	iretq
