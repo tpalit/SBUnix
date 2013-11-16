@@ -30,10 +30,11 @@ task_struct* make_process_from_elf(char* path)
 	Elf64_Ehdr* ehdr = find_elf(path);
 	task_struct* new_task = NULL;
 	if(NULL != ehdr){
-		/* Parse and load the segments */
-		parse_load_elf_segments(ehdr);
 		new_task = (task_struct*)kmalloc(sizeof(task_struct));
 		create_new_process(new_task, (u64int)ehdr->e_entry);
+		/* Parse and load the segments */
+		parse_load_elf_segments(ehdr, new_task);
+		kprintf("Loaded %p\n", ehdr->e_entry);
 	}
 	return new_task;
 }
@@ -48,7 +49,6 @@ Elf64_Ehdr* find_elf(char* path)
 	while((ptr+2) < (posix_header_ustar*)&_binary_tarfs_end) {
 		size = 0;
 		byte_size = 0;
-		kprintf("name = %s ", ptr->name);
 		// Read the ELF file header and contents, if the size is > 0
 		if (tarfs_atoi(ptr->size,8) > 0) {
 			Elf64_Ehdr* ehdr_ptr = (Elf64_Ehdr*)(ptr+1);
@@ -71,7 +71,7 @@ Elf64_Ehdr* find_elf(char* path)
 /**
  * Load all program headers of an ELF file into memory.
  */
-void parse_load_elf_segments(Elf64_Ehdr* elf64_ehdr_ptr) 
+void parse_load_elf_segments(Elf64_Ehdr* elf64_ehdr_ptr, task_struct* task_ptr) 
 {
 	int headerCount = elf64_ehdr_ptr->e_phnum;
 	Elf64_Phdr* phdr_ptr = (Elf64_Phdr*)(((u64int)elf64_ehdr_ptr)+elf64_ehdr_ptr->e_phoff);
@@ -83,7 +83,7 @@ void parse_load_elf_segments(Elf64_Ehdr* elf64_ehdr_ptr)
 		  kprintf("Program flags = %x\n", phdr_ptr->p_flags);
 		  kprintf("Program size in memory = %x\n", phdr_ptr->p_memsz);
 		*/
-		load_elf_segment(elf64_ehdr_ptr, phdr_ptr);
+		load_elf_segment(elf64_ehdr_ptr, phdr_ptr, task_ptr);
 		phdr_ptr++;
 	}	
 }
@@ -91,8 +91,12 @@ void parse_load_elf_segments(Elf64_Ehdr* elf64_ehdr_ptr)
 /**
  * Load the Elf segment defined by the prog header into memory.
  */
-void load_elf_segment(Elf64_Ehdr* elf64_ehdr_ptr, Elf64_Phdr* elf64_phdr_ptr)
+void load_elf_segment(Elf64_Ehdr* elf64_ehdr_ptr, Elf64_Phdr* elf64_phdr_ptr, task_struct* task_ptr)
 {
+	/* First switch the address space to that of the process associated with this Elf file. */
+	__asm__ __volatile__(
+			     "movq %0, %%cr3\n\t"
+			     ::"r"(task_ptr->cr3_register));
 	/* First map the region into memory */
 	kmmap((void*)elf64_phdr_ptr->p_vaddr, elf64_phdr_ptr->p_memsz, 0,0,0,0);
 	/* Then get copy the region into memory using memcpy */

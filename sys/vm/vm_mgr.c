@@ -6,7 +6,7 @@
 #include<common.h>
 #include<sys/vm_mgr.h>
 #include<sys/pm_mgr.h>
-
+#include<stdio.h>
 /* Defined in main.c */
 extern pml4_e pml_entries[];
 extern pdp_e pdp_entries[];
@@ -307,13 +307,27 @@ void map_phys_vir_pg(u64int phys_addr, u64int vir_addr)
  *
  * kmalloc will build on this. 
  */ 
-u64int get_free_page()
+u64int get_free_page(void)
 {
 	nz_free_list free_page = alloc_phys_pg(KERN_PG);
 	VIR_MEM_TOP += PAGE_SIZE;
        	map_phys_vir_pg(free_page->pgfrm_saddr, VIR_MEM_TOP);
-
 	return VIR_MEM_TOP;
+}
+
+phys_vir_addr page_addr;
+/*
+ * This should never be used from outside the kernel. It uses a globally 
+ * allocated structure, whose data might get corrupted by other threads. 
+ */
+phys_vir_addr* get_free_phys_page(void)
+{
+	nz_free_list free_page = alloc_phys_pg(KERN_PG);
+	VIR_MEM_TOP += PAGE_SIZE;
+       	map_phys_vir_pg(free_page->pgfrm_saddr, VIR_MEM_TOP);
+	page_addr.phys_addr = free_page->pgfrm_saddr;
+	page_addr.vir_addr = VIR_MEM_TOP;
+	return &page_addr;
 }
 
 /**

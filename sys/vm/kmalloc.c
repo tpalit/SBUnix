@@ -3,6 +3,7 @@
  */
 
 #include<sys/kmalloc.h>
+#include<stdio.h>
 #include<sys/vm_mgr.h>
 #include<sys/pm_mgr.h>
 #include<common.h>
@@ -15,6 +16,7 @@ u64int km_curr_pg_base = NULL;
  */
 void* kmalloc(u32int k_size)
 {
+	kprintf("Inside kmalloc!\n");
 	if (k_size > PAGE_SIZE) {
 		panic("Can't allocate more than one page by kmalloc, right now!");
 	}

@@ -56,7 +56,7 @@ void dump_tarfs_contents(void)
 						kprintf("Program flags = %x\n", phdr_ptr->p_flags);
 						kprintf("Program size in memory = %x\n", phdr_ptr->p_memsz);
 						*/
-						load_elf_segment(ehdr_ptr, phdr_ptr);
+						//_elf_segment(ehdr_ptr, phdr_ptr);
 						phdr_ptr++;
 					}
 				}

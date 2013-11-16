@@ -33,7 +33,6 @@ u64int VIDEO_MEM_START = 0xB8000;
  */
 int kprintf(const char *format, ...)
 {
-	asm("cli\n\t");
 	int i=0;
 	char ch;
 	va_list arguments;
@@ -68,7 +67,6 @@ int kprintf(const char *format, ...)
 		i++;
 	}
 	va_end(arguments);
-	asm("sti\n\t");
 	return 0;
 }
 

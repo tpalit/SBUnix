@@ -88,10 +88,10 @@ typedef struct
 
 u64int tarfs_atoi(char*, u8int);
 
-void load_elf_segment(Elf64_Ehdr* , Elf64_Phdr*);
+void load_elf_segment(Elf64_Ehdr* , Elf64_Phdr*, task_struct*);
 
 Elf64_Ehdr* find_elf(char*);
 
-void parse_load_elf_segments(Elf64_Ehdr*);
+void parse_load_elf_segments(Elf64_Ehdr*, task_struct*);
 
 task_struct* make_process_from_elf(char*);

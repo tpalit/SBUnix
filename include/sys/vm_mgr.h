@@ -60,6 +60,14 @@ u64int find_base_addr(u64int);
 #define PD_ENTRY(addr) (/*(u64int*)*/(BASE_ADDR_PD + (((addr)>>18) & 0x003FFFF000)))
 #define PT_ENTRY(addr) (/*(u64int*)*/(BASE_ADDR_PT + (((addr)>>9) & 0x7FFFFFF000)))
 
+/* The physical and virtual address of a page */
+struct phys_vir_addr
+{
+	u64int phys_addr;
+	u64int vir_addr;
+};
+
+typedef struct phys_vir_addr phys_vir_addr;
 
 struct vm_struct{
 	struct mm_struct *vmmstruct;
@@ -81,6 +89,8 @@ void map_phys_vir_pg(u64int, u64int);
 void init_pg_dir_pages(pml4_e*);
 
 void* kmmap(void*, u64int, u32int, u32int, u32int, u32int);
-u64int get_free_page();
+u64int get_free_page(void);
 
+/* For the rare cases, when the physical address of a page is needed. */
+phys_vir_addr* get_free_phys_page(void);
 #endif

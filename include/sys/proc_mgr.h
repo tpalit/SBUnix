@@ -30,6 +30,7 @@ struct task_struct
 	struct task_struct* next; /* The next process in the process list - either the ACTIVE/SLEEPING/ZOMBIE */
 	struct task_struct* last_run; /* The process that ran last */
 	mm_struct* mm_struct_ptr;
+	cr3_reg cr3_register;
 };
 
 typedef struct task_struct task_struct;
@@ -43,6 +44,8 @@ void __switch_to();
 void init_schedule();
 
 void create_new_process(task_struct*, u64int function_ptr);
+
+void map_high_mem(pml4_e*);
 /*
  * The previous and next task structs.
  * The previous will be pushed on to the stack so that it's reference can be found

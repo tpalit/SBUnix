@@ -136,6 +136,15 @@ void initialize_idt()
 
 	create_idt_entry(13, (u64int)_isr_handler_head_13, 0x08, 0x0, 0x8E);
 	create_idt_entry(14, (u64int)_isr_handler_head_14, 0x08, 0x0, 0x8E);
+
+	/*
+	create_idt_entry(8, (u64int)_isr_handler_head_14, 0x08, 0x0, 0x8E);
+	create_idt_entry(11, (u64int)_isr_handler_head_14, 0x08, 0x0, 0x8E);
+	create_idt_entry(12, (u64int)_isr_handler_head_14, 0x08, 0x0, 0x8E);
+	create_idt_entry(17, (u64int)_isr_handler_head_14, 0x08, 0x0, 0x8E);
+	create_idt_entry(30, (u64int)_isr_handler_head_14, 0x08, 0x0, 0x8E);
+	*/
+
 	create_idt_entry(128, (u64int) syscall_handler, 0x08, 0x0, 0xEE);
 	idtr_ptr.table_limit = sizeof(idt_entry_t)*256;
 	idtr_ptr.linear_base_addr = (u64int)idt_entries;

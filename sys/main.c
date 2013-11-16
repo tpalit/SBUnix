@@ -12,8 +12,7 @@
 #include<sys/pm_mgr.h>
 #include<sys/kmalloc.h>
 #include<sys/proc_mgr.h>
-#include<sys/tarfs_loader.h>
-#include<sys/tarfs.h>
+#include<sys/elf64.h>
 
 #define LOW_MEM 0
 #define HI_MEM 1
@@ -38,48 +37,10 @@ pml4_e pml_entries[512] __attribute__((aligned(0x1000)));
 pdp_e pdp_entries[512] __attribute__((aligned(0x1000))); // First table of PDP
 pd_e pd_entries[512] __attribute__((aligned(0x1000))); // First table of PD
 pt_e pt_entries[512] __attribute__((aligned(0x1000))); // First table of PT
-
-/* Test user mode */
-extern void switch_to_user_mode(void);
-
-void test()
-{
-	int i = 0;
-	i++;
-}
-void test_user_function(void)
-{
-	test();
-	asm("int $0x80\n\t");
-	//	asm("sti\n\t");
-	//	kprintf("hello");
-	while(1);
-}
-
-int f1 = 0;
-int f2 = 0;
-
-void function1(void)
-{
-	int x=0;
-	while(x<10){
-		//      		++x;
-       		kprintf("I'm function 1:\n");
-		//		schedule();
-	}
-}
-
-void function2(void)
-{
-	int j=0;	
-	while(j<10){
-		kprintf("Hello!\n");
-	}
-}
-
+cr3_reg cr3_register;
 void start(uint32_t* modulep, void* physbase, void* physfree)
 {
-	cr3_reg cr3_register;
+
 	struct smap_t {
 		uint64_t base, length;
 		uint32_t type;
@@ -106,22 +67,19 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 	init_pg_dir_pages(pml_entries);
 	map_phys_vir_range((u64int)physbase, (u64int)physfree, (u64int)(KERN_VIR_START+physbase));	
 	create_cr3_reg(&cr3_register, (u64int)pml_entries-KERN_VIR_START, 0x00, 0x00);
+	kprintf("Kernel's cr3_register = %x\n", cr3_register);
 	__asm__ __volatile__(
 			     "movq %0, %%cr3\n\t"
 			     ::"a"(cr3_register));
 	/* Setup the stack again. */
 	__asm__ __volatile__("movq %0, %%rbp" : :"a"(&stack[0]));
 	__asm__ __volatile__("movq %0, %%rsp" : :"a"(&stack[INITIAL_STACK_SIZE]));
-	/*
-	task_struct* struct1 = (task_struct*)kmalloc(sizeof(task_struct));
-	task_struct* struct2 = (task_struct*)kmalloc(sizeof(task_struct));
-	create_new_process(struct1, (u64int)function1);
-	create_new_process(struct2, (u64int)function2);
-	*/
-	kprintf("The tarfs region: [%p to %p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
+	//	kprintf("The tarfs region: [%p to %p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
        	initialize_tss();
+	make_process_from_elf("bin/hello");
+	//	make_process_from_elf("bin/hi");
 	__asm__("sti\n\t");
-	dump_tarfs_contents();
+	//	dump_tarfs_contents();
 	//       	switch_to_user_mode();
 	while(1);
 }
@@ -137,7 +95,6 @@ void boot(void)
 	initialize_gdt();
 	__asm__("cli\n\t");
        	initialize_idt();
-
 	init_timer(100);
 	start(
 		(uint32_t*)((char*)(uint64_t)loader_stack[3] + (uint64_t)&kernmem - (uint64_t)&physbase),
