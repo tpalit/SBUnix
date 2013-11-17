@@ -9,6 +9,7 @@
 #include<common.h>
 #include<stdio.h>
 #include<sys/proc_mgr.h>
+#include<sys/terminal.h>
 
 extern u64int ticks;
 
@@ -90,29 +91,12 @@ void isr_handler_body_33(void)
 	 * The keyboard writes the scan code
 	 * at 0x60. So read it.
 	 */
-	/*
+
 	u8int scan_code;
-	volatile char *video = (volatile char*)0xB8F8C;
 	__asm__("inb $0x60, %%al\n\t"
 		"mov %%al, %0\n\t"
 		:"=r"(scan_code));
-	if (scan_code == 0x2A || scan_code == 0x36) {
-		is_shift_pressed = 1;
-	} else if (scan_code == 0xAA || scan_code == 0xB6) {
-		is_shift_pressed = 0;
-	} else if (scan_code == 0x1D || scan_code == 0xE0) {
-		is_ctrl_pressed = 1;
-	} else if (scan_code == 0x9D) {
-		is_ctrl_pressed = 0;
-	} else if (scan_code < 0x80) {
-		if (is_shift_pressed) {
-			*video++ = scan_code_map[scan_code]-32;			
-		} else {
-			*video++ = scan_code_map[scan_code];
-		}
-		*video++ = 0x07;
-	}
-	*/
+	terminal(scan_code);
 }
 
 void print_time_on_screen(time_struct* time_s)
