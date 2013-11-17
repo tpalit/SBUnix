@@ -91,14 +91,12 @@ void buffer (unsigned int op, unsigned char key)
 		buff[buffp++]=key;
 	}
 	else if(op==3){
-		kprintf("Trying to run executable...:%s", buff);
 		make_process_from_elf(buff);
 		buffp = 0;
 		int i = 0;
-		for(i = buffp;i>=0;i--)
-			{
-				buff[i]=NULL; // clearing the buffer
-			}
+		for(i = buffp;i>=0;i--) {
+			buff[i]=NULL; // clearing the buffer
+		}
 	}
 }
 void terminal(unsigned char scancode)
@@ -106,38 +104,35 @@ void terminal(unsigned char scancode)
 	//	unsigned char* temp;
 	//	temp = get_video();
 	int func=0;
-	if (scancode & 0x80)
-		{
-			//currently do nothing on key release
+	if (scancode & 0x80) {
+		//currently do nothing on key release
+	}
+	else {
+		if(scancode == 42){ //Shift is pressed
+			func = 1;
+		}else if(scancode==29){ //ctrl is pressed
+			func=2;
+		}else if(scancode==56){ // alt is pressed
+			func=3;
+		}else if(scancode==0xe){
+			do_bkspace();
+			buffer(0,0);
+		}else if(scancode==0x1c){
+			buffer(3,0);
 		}
-	else
-		{
-			if(scancode==42){ //Shift is pressed
-				func = 1;
-			}else if(scancode==29){ //ctrl is pressed
-				func=2;
-			}else if(scancode==56){ // alt is pressed
-				func=3;
-			}else if(scancode==0xe){
-				//				*temp--=0;
-				//				*temp--=0;
-				buffer(0,0);
-			}else if(scancode==0x1c){
-				buffer(3,0);
+		else{
+			if(func ==1){
+				kprintf("%c",kbdus1[scancode]);
+				buffer(1,kbdus1[scancode]);
+				func=0;
 			}
-			else{
-				if(func ==1){
-					kprintf("%c",kbdus1[scancode]);
-					buffer(1,kbdus1[scancode]);
-					func=0;
-				}
 
-				else{
-					kprintf ("%c",kbdus[scancode]);
-					buffer(1,kbdus[scancode]);
-				}
+			else{
+				kprintf ("%c",kbdus[scancode]);
+				buffer(1,kbdus[scancode]);
 			}
 		}
+	}
 
 }
 

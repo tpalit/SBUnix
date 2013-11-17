@@ -274,3 +274,10 @@ void clear_terminal()
 	}
 	reset_terminal_cursor();
 }
+
+void do_bkspace(void)
+{
+	screen_pos_y--;
+	putchar(' ');
+	screen_pos_y--;
+}

@@ -15,5 +15,5 @@ int scanf(const char *format, ...);
 void putchar(const char);
 void putint(s32int, int);
 void puts(const char*);
-
+void do_bkspace(void);
 #endif
