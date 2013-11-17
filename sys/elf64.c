@@ -30,10 +30,11 @@ task_struct* make_process_from_elf(char* path)
 	Elf64_Ehdr* ehdr = find_elf(path);
 	task_struct* new_task = NULL;
 	if(NULL != ehdr){
+		kprintf("Trying to load ...");
 		new_task = (task_struct*)kmalloc(sizeof(task_struct));
 		create_new_process(new_task, (u64int)ehdr->e_entry);
 		/* Parse and load the segments */
-		parse_load_elf_segments(ehdr, new_task);
+       		parse_load_elf_segments(ehdr, new_task);
 		kprintf("Loaded %p\n", ehdr->e_entry);
 	}
 	return new_task;
@@ -83,7 +84,7 @@ void parse_load_elf_segments(Elf64_Ehdr* elf64_ehdr_ptr, task_struct* task_ptr)
 		  kprintf("Program flags = %x\n", phdr_ptr->p_flags);
 		  kprintf("Program size in memory = %x\n", phdr_ptr->p_memsz);
 		*/
-		load_elf_segment(elf64_ehdr_ptr, phdr_ptr, task_ptr);
+	       	load_elf_segment(elf64_ehdr_ptr, phdr_ptr, task_ptr);
 		phdr_ptr++;
 	}	
 }
@@ -93,7 +94,11 @@ void parse_load_elf_segments(Elf64_Ehdr* elf64_ehdr_ptr, task_struct* task_ptr)
  */
 void load_elf_segment(Elf64_Ehdr* elf64_ehdr_ptr, Elf64_Phdr* elf64_phdr_ptr, task_struct* task_ptr)
 {
+	u64int old_cr3 = 0L;
 	/* First switch the address space to that of the process associated with this Elf file. */
+	__asm__ __volatile__(
+			     "movq %%cr3, %0\n\t"
+			     :"=r"(old_cr3));
 	__asm__ __volatile__(
 			     "movq %0, %%cr3\n\t"
 			     ::"r"(task_ptr->cr3_register));
@@ -103,4 +108,8 @@ void load_elf_segment(Elf64_Ehdr* elf64_ehdr_ptr, Elf64_Phdr* elf64_phdr_ptr, ta
 	kmemcpy((void*)elf64_phdr_ptr->p_vaddr,
 		(void*)((u64int)elf64_ehdr_ptr)+elf64_phdr_ptr->p_offset, 
 		elf64_phdr_ptr->p_memsz);
+	/* Load back the old cr3 */
+	__asm__ __volatile__(
+			     "movq %0, %%cr3\n\t"
+			     ::"r"(task_ptr->cr3_register));	
 }

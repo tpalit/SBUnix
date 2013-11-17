@@ -33,7 +33,6 @@ void* syscalls_tbl[SYSCALL_NR] =
 /* The handler for the int 80h */
 void syscall_handler(void)
 {
-	__asm__("cli\n\t");
 	u64int rax;
 	__asm__ __volatile__ ("movq %%rax, %0":"=r"(rax));
 	if (rax >= SYSCALL_NR)
@@ -41,6 +40,6 @@ void syscall_handler(void)
 	void *location = syscalls_tbl[rax];
 	u64int ret;
 	__asm__ __volatile__ ("callq *%0\n\t  " : "=a" (ret) :  "r" (location));
-	__asm__("sti\n\t");
+	__asm__ ("iretq\n\t");
 }
 

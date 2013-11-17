@@ -45,7 +45,6 @@ void init_schedule();
 
 void create_new_process(task_struct*, u64int function_ptr);
 
-void map_high_mem(pml4_e*);
 /*
  * The previous and next task structs.
  * The previous will be pushed on to the stack so that it's reference can be found

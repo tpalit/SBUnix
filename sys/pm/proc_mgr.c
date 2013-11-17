@@ -46,7 +46,6 @@ void add_to_ready_list(task_struct* task_struct_ptr)
 		}
 		ready_list_ptr->next = task_struct_ptr;
 	}
-	kprintf("Added to read list = %p\n", READY_LIST);
 }
 
 void schedule()
@@ -82,7 +81,6 @@ void timer_interrupt(void)
 	u64int old_rsp;
 	__asm__ __volatile__("movq %%rsp, %[old_rsp]": [old_rsp] "=r"(old_rsp));
 	ticks++; /* Global variable */
-
 	if(READY_LIST != NULL) {
 		if (!scheduler_inited){
 			/* The first time schedule gets invoked - additional processing needs done. */
@@ -120,8 +118,10 @@ void timer_interrupt(void)
 			CURRENT_TASK = READY_LIST;
 			/* Add prev to the end of the READY_LIST */
 			add_to_ready_list(prev);
-			
 			READY_LIST = READY_LIST->next;
+			__asm__ __volatile__(
+					     "movq %0, %%cr3\n\t"
+					     ::"r"(next->cr3_register));			
 			__asm__ __volatile__("mov $0x20, %al\n\t"
 					     "out %al, $0x20\n\t"
 					     "out %al, $0xA0\n\t"
@@ -146,21 +146,6 @@ void init_schedule()
 	__asm__ __volatile("movq %[prev_bp], %%rbp\n\t"::[prev_bp] "m" (prev->rsp_register));
 }
 
-void map_high_mem(pml4_e* pml4_ptr){
-	int i = 0;
-
-	/* Create blank PML4E */
-	for(i=0; i<512; i++){
-		if (i==510) {
-			/* The recursive mapping */
-			create_pml4_e(&pml4_ptr[i], (u64int)pml4_ptr, 0x0, 0x07, 0x00);
-		} else {
-			create_pml4_e(&pml4_ptr[i], 0x0, 0x0, 0x06, 0x00);
-		}
-	}
-	pml4_ptr[511] = pml_entries[511];
-}
-
 pml4_e proc_pml_entries[512]__attribute__((aligned(0x1000)));
 void create_new_process(task_struct* task_struct_ptr, u64int function_ptr)
 {
@@ -181,16 +166,26 @@ void create_new_process(task_struct* task_struct_ptr, u64int function_ptr)
 	/* This has to be aligned on 0x1000 boundaries and need the physical address */
 	phys_vir_addr* page_addr = get_free_phys_page();
 	pml4_e* pml_entries_ptr = (pml4_e*)page_addr->vir_addr;
-	/*
-	kprintf("address given = %p\n", pml_entries_ptr);
-	kprintf("The .data address = %p\n", proc_pml_entries);
-       	map_high_mem(pml_entries_ptr);
-	*/
-	map_high_mem(pml_entries_ptr);
+
+	/* Map the higher memory by copying the PML4E*/
+	int i = 0;
+
+	/* Create blank PML4E */
+	for(i=0; i<512; i++){
+		if (i==PML4_REC_SLOT) {
+			/* The recursive mapping */
+			create_pml4_e(&pml_entries_ptr[i], (u64int)page_addr->phys_addr, 0x0, 0x07, 0x00);
+		} else {
+			pml_entries_ptr[i] = pml_entries[i];			
+
+		}
+	}
+
 	cr3_reg process_cr3;
 	create_cr3_reg(&process_cr3, (u64int)page_addr->phys_addr, 0x00, 0x00);
+
 	task_struct_ptr->cr3_register = process_cr3;
 	/* Add to the ready list */
 	add_to_ready_list(task_struct_ptr);
-	while(1);
+
 }
