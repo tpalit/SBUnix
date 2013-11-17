@@ -76,8 +76,9 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 	__asm__ __volatile__("movq %0, %%rsp" : :"a"(&stack[INITIAL_STACK_SIZE]));
 	//	kprintf("The tarfs region: [%p to %p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
        	initialize_tss();
-	make_process_from_elf("bin/hello");
 	make_process_from_elf("bin/hi");
+	make_process_from_elf("bin/hello");
+	make_process_from_elf("bin/test");
 	__asm__("sti\n\t");
 	//	dump_tarfs_contents();
 	//       	switch_to_user_mode();
@@ -95,7 +96,7 @@ void boot(void)
 	initialize_gdt();
 	__asm__("cli\n\t");
        	initialize_idt();
-	init_timer(100);
+	init_timer(10);
 	start(
 		(uint32_t*)((char*)(uint64_t)loader_stack[3] + (uint64_t)&kernmem - (uint64_t)&physbase),
 		&physbase,

@@ -17,6 +17,7 @@ task_struct* CURRENT_TASK = NULL;
 task_struct* prev = NULL;
 task_struct* next = NULL;
 
+u32int PROC_ID_TOP = 0;
 
 extern pml4_e pml_entries[512];
 extern u64int ticks;
@@ -161,7 +162,7 @@ void create_new_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->rflags = 0x20202;
 	task_struct_ptr->next = NULL;
 	task_struct_ptr->last_run = NULL;
-
+	task_struct_ptr->proc_id = PROC_ID_TOP++;
 	/* Set up the process address space */
 	/* This has to be aligned on 0x1000 boundaries and need the physical address */
 	phys_vir_addr* page_addr = get_free_phys_page();
