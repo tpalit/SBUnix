@@ -277,7 +277,9 @@ void clear_terminal()
 
 void do_bkspace(void)
 {
-	screen_pos_y--;
-	putchar(' ');
-	screen_pos_y--;
+	if(screen_pos_y > 0) {
+		screen_pos_y--;
+		putchar(' ');
+		screen_pos_y--;
+	}
 }

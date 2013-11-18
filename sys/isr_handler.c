@@ -9,6 +9,8 @@
 #include<common.h>
 #include<stdio.h>
 #include<sys/proc_mgr.h>
+#include<sys/vm_mgr.h>
+#include<sys/kstring.h>
 #include<sys/terminal.h>
 
 extern u64int ticks;
@@ -17,6 +19,7 @@ extern void find_time_since_boot(time_struct*);
 extern void itoa(u64int, char*, int);
 extern task_struct* READY_LIST;
 
+extern task_struct* CURRENT_TASK;
 /*
  * Flags to indicate if shift and control keys
  * are pressed.
@@ -76,9 +79,35 @@ void isr_handler_body_13(void)
  */
 void isr_handler_body_14(void)
 {
-       	dump_regs();
-	panic("Page fault Happened!");
-
+	volatile u64int faulting_address = 0x0;
+	vm_struct* vma_to_map = NULL;
+	u8int okay_to_map = 0;
+	__asm__ __volatile__("movq %%cr2, %[cr2_register]\n\t":[cr2_register]"=r"(faulting_address));
+	if (faulting_address >= KERN_VIR_START) {
+		/* Page fault in Kernel */
+		dump_regs();
+		panic("Page fault Happened!");
+	} else {
+		/* @TODO - Assume that the CURRENT_TASK has caused the page fault. 
+		*  Check if this is always true.
+		*/
+		vm_struct* vm_struct_ptr = CURRENT_TASK->vm_head;
+		while (vm_struct_ptr != NULL){
+			if (faulting_address >= vm_struct_ptr->vm_start && 
+			    faulting_address <= vm_struct_ptr->vm_end){
+				vma_to_map = vm_struct_ptr;
+				okay_to_map = 1;
+				break;
+			}
+			vm_struct_ptr = vm_struct_ptr->vm_next;
+		}
+	}
+	if(okay_to_map){
+		kprintf("Trying to map %p\n", faulting_address);
+		kmmap((void*)vma_to_map->vm_start, vma_to_map->vm_end-vma_to_map->vm_start,0, 0, 0, 0);
+		
+	}
+	
 }
 
 

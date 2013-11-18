@@ -29,7 +29,7 @@ struct task_struct
 	u64int rflags;
 	struct task_struct* next; /* The next process in the process list - either the ACTIVE/SLEEPING/ZOMBIE */
 	struct task_struct* last_run; /* The process that ran last */
-	mm_struct* mm_struct_ptr;
+	vm_struct* vm_head;
 	cr3_reg cr3_register;
 };
 

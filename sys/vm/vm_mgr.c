@@ -339,6 +339,7 @@ void* kmmap(void* start_addr, u64int length, u32int prot, u32int flags, u32int f
 	u64int addr = (u64int)start_addr;
 	u64int bytes_allocated = 0;
 	nz_free_list free_page = NULL;
+	kprintf("Trying to map %x bytes at %p\n", length, start_addr);
 	while(bytes_allocated < length) {
 		free_page = alloc_phys_pg(KERN_PG);
 		map_phys_vir_pg(free_page->pgfrm_saddr, (u64int)addr);

@@ -79,8 +79,8 @@ unsigned char kbdus1[128] =
 		0,
 		0,
 	};
-
-char buff[100];
+#define BUFF_SIZE 100
+char buff[BUFF_SIZE];
 unsigned int buffp=0;
 void buffer (unsigned int op, unsigned char key)
 {
@@ -91,6 +91,7 @@ void buffer (unsigned int op, unsigned char key)
 		buff[buffp++]=key;
 	}
 	else if(op==3){
+		kprintf("Trying to load %s\n", buff);
 		make_process_from_elf(buff);
 		buffp = 0;
 		int i = 0;
@@ -122,14 +123,17 @@ void terminal(unsigned char scancode)
 		}
 		else{
 			if(func ==1){
-				kprintf("%c",kbdus1[scancode]);
-				buffer(1,kbdus1[scancode]);
-				func=0;
+				if (buffp < BUFF_SIZE){
+					kprintf("%c",kbdus1[scancode]);
+					buffer(1,kbdus1[scancode]);
+					func=0;
+				}				
 			}
-
 			else{
-				kprintf ("%c",kbdus[scancode]);
-				buffer(1,kbdus[scancode]);
+				if (buffp < BUFF_SIZE){
+					kprintf ("%c",kbdus[scancode]);
+					buffer(1,kbdus[scancode]);
+				}
 			}
 		}
 	}

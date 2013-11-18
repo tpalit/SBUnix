@@ -30,12 +30,26 @@ task_struct* make_process_from_elf(char* path)
 	Elf64_Ehdr* ehdr = find_elf(path);
 	task_struct* new_task = NULL;
 	if(NULL != ehdr){
-		kprintf("Trying to load ...");
 		new_task = (task_struct*)kmalloc(sizeof(task_struct));
 		create_new_process(new_task, (u64int)ehdr->e_entry);
 		/* Parse and load the segments */
        		parse_load_elf_segments(ehdr, new_task);
-		kprintf("Loaded %p\n", ehdr->e_entry);
+		/* Give the task some heap memory */
+		vm_struct* heap_vma = (vm_struct*)kmalloc(sizeof(vm_struct));
+		heap_vma->vm_start = 0x5000e8;
+		heap_vma->vm_end = 0x5000e8;
+		kstrcpy(heap_vma->vm_type, "HEAP");
+		heap_vma->vm_next = NULL;
+		/* Attach this vma to the list given in the task_struct */
+		if (new_task->vm_head == NULL){
+			new_task->vm_head = heap_vma;
+		} else {
+			vm_struct* vma_ptr = new_task->vm_head;
+			while(vma_ptr->vm_next != NULL){
+				vma_ptr = vma_ptr->vm_next;
+			}
+			vma_ptr->vm_next = heap_vma;
+		}
 	}
 	return new_task;
 }
@@ -112,4 +126,26 @@ void load_elf_segment(Elf64_Ehdr* elf64_ehdr_ptr, Elf64_Phdr* elf64_phdr_ptr, ta
 	__asm__ __volatile__(
 			     "movq %0, %%cr3\n\t"
 			     ::"r"(task_ptr->cr3_register));	
+	/* Creae a VMA struct for this region */
+	vm_struct* proc_vma = (vm_struct*)kmalloc(sizeof(vm_struct));
+	proc_vma->vm_start = elf64_phdr_ptr->p_vaddr;
+	proc_vma->vm_end = elf64_phdr_ptr->p_vaddr + elf64_phdr_ptr->p_memsz;
+	if (elf64_phdr_ptr->p_flags == 0x06) {
+		kstrcpy(proc_vma->vm_type, "DATA");
+	} else if (elf64_phdr_ptr->p_flags == 0x05) {
+		kstrcpy(proc_vma->vm_type, "CODE");
+	} else {
+		kstrcpy(proc_vma->vm_type, "OTHR");
+	}
+	proc_vma->vm_next = NULL;
+	/* Attach this vma to the list given in mmstruct */
+	if (task_ptr->vm_head == NULL){
+		task_ptr->vm_head = proc_vma;
+	} else {
+		vm_struct* vma_ptr = task_ptr->vm_head;
+		while(vma_ptr->vm_next != NULL){
+			vma_ptr = vma_ptr->vm_next;
+		}
+		vma_ptr->vm_next = proc_vma;
+	}
 }

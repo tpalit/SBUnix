@@ -22,6 +22,17 @@ int kstrcmp(char* str1, char* str2)
 	}
 }
 
+void kstrcpy(char *target, char *source)
+{
+	while(*source)
+		{
+			*target = *source;
+			source++;
+			target++;
+		}
+	*target = '\0';
+}
+
 void* kmemcpy(void* dest, void* src, int count)
 {
 	char* dst1 = (char*)dest;

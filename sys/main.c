@@ -40,7 +40,6 @@ pt_e pt_entries[512] __attribute__((aligned(0x1000))); // First table of PT
 cr3_reg cr3_register;
 void start(uint32_t* modulep, void* physbase, void* physfree)
 {
-
 	struct smap_t {
 		uint64_t base, length;
 		uint32_t type;
@@ -67,7 +66,6 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 	init_pg_dir_pages(pml_entries);
 	map_phys_vir_range((u64int)physbase, (u64int)physfree, (u64int)(KERN_VIR_START+physbase));	
 	create_cr3_reg(&cr3_register, (u64int)pml_entries-KERN_VIR_START, 0x00, 0x00);
-	kprintf("Kernel's cr3_register = %x\n", cr3_register);
 	__asm__ __volatile__(
 			     "movq %0, %%cr3\n\t"
 			     ::"a"(cr3_register));
@@ -76,9 +74,6 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 	__asm__ __volatile__("movq %0, %%rsp" : :"a"(&stack[INITIAL_STACK_SIZE]));
 	//	kprintf("The tarfs region: [%p to %p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
        	initialize_tss();
-	//	make_process_from_elf("bin/hi");
-	//       	make_process_from_elf("bin/hello");
-	//      	make_process_from_elf("bin/test");
 	__asm__("sti\n\t");
 	//	dump_tarfs_contents();
 	//       	switch_to_user_mode();

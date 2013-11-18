@@ -70,10 +70,10 @@ struct phys_vir_addr
 typedef struct phys_vir_addr phys_vir_addr;
 
 struct vm_struct{
-	struct mm_struct *vmmstruct;
+	char vm_type[10];  /* The type of the vma - CODE, DATA, HEAP */
 	u64int vm_start;      /* VMA start, inclusive */
 	u64int vm_end;        /* VMA end , exclusive */
-	struct vm_area_struct *next;      /* list of VMA's */
+	struct vm_struct *vm_next;      /* list of VMA's */
 };
 
 typedef struct vm_struct vm_struct;

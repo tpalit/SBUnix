@@ -107,7 +107,6 @@ void timer_interrupt(void)
 					     "iretq\n\t");
 		} else {
 			prev = CURRENT_TASK;
-
 			next = READY_LIST;
 			__asm__ __volatile__(
 					     "movq %[old_rsp], %[prev_rsp]\n\t"
@@ -163,6 +162,7 @@ void create_new_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->next = NULL;
 	task_struct_ptr->last_run = NULL;
 	task_struct_ptr->proc_id = PROC_ID_TOP++;
+	task_struct_ptr->vm_head = NULL;
 	/* Set up the process address space */
 	/* This has to be aligned on 0x1000 boundaries and need the physical address */
 	phys_vir_addr* page_addr = get_free_phys_page();

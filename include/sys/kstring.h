@@ -2,6 +2,7 @@
 #define _STRING_H
 
 int kstrcmp(char*, char*);
-void* kmemcpy(void* dest, void* src, int n);
+void kstrcpy(char*, char*);
+void* kmemcpy(void*, void*, int);
 
 #endif
