@@ -153,7 +153,7 @@ _isr_handler_head_13:
 _isr_handler_head_14:
 
 	cli
-
+	pop %r10
 	push %rax
 	push %rbx
 	push %rcx

@@ -16,11 +16,10 @@ extern task_struct* CURRENT_TASK;
 /* These will get invoked in kernel mode. */
 int do_write(char* s)
 {
-	kprintf("in do_write\n");
 	while(*s != '\0'){
 		putchar(*s++);
 	}
-	return 0;
+	return 42;
 }
 
 int do_read(char* s)

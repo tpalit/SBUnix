@@ -3,7 +3,7 @@
 #include<common.h>
 
 void* malloc(u64int size) {
-	u64int ret_ptr = 0x0;
+	register volatile u64int ret_val = 0;
 	/* Store the pointer in the rdx register. */
 	__asm__ __volatile__("movq %[s], %%rdx\n\t"
 			     :
@@ -11,6 +11,6 @@ void* malloc(u64int size) {
 	/* Store the system call index in the rax register. */
 	__asm__ __volatile__("movq $2, %rax\n\t");
 	__asm__("int $0x80\n\t");
-	__asm__("movq %%rax, %[ret_ptr]":[ret_ptr]"=m"(ret_ptr));
-	return (void*)ret_ptr;
+	__asm__("movq %%rax, %[ret_ptr]":[ret_ptr]"=r"(ret_val));
+	return (void*)ret_val;
 }
