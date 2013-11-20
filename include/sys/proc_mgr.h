@@ -43,8 +43,8 @@ void __switch_to();
 /* The first schedule */
 void init_schedule();
 
-void create_new_process(task_struct*, u64int function_ptr);
-
+void create_kernel_process(task_struct*, u64int);
+void create_user_process(task_struct*, u64int);
 /*
  * The previous and next task structs.
  * The previous will be pushed on to the stack so that it's reference can be found

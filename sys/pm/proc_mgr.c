@@ -5,7 +5,7 @@
 #include<sys/kmalloc.h>
 #include<sys/proc_mgr.h>
 #include<sys/vm_mgr.h>
-#include<stdio.h>
+#include<sys/desc_tbls.h>
 #include<common.h>
 
 /* The process lists. The task at the head of the READY_LIST should always be executed next.*/
@@ -22,6 +22,8 @@ u32int PROC_ID_TOP = 0;
 extern pml4_e pml_entries[512];
 extern u64int ticks;
 extern cr3_reg cr3_register;
+extern tss_struct tss_entry; /* The tss_entry.rsp0 has to be updated after each task switch */
+
 /* Whether the scheduler has been inited */
 u8int scheduler_inited = 0;
 void __switch_to()
@@ -101,6 +103,8 @@ void timer_interrupt(void)
 			__asm__ __volatile__(
 					     "movq %0, %%cr3\n\t"
 					     ::"r"(prev->cr3_register));
+			__asm__ __volatile__("movq %%rsp, %[tss_rsp0]\n\t"
+					     :[tss_rsp0]"=m"(tss_entry.rsp0));
 			__asm__ __volatile__("mov $0x20, %al\n\t"
 					     "out %al, $0x20\n\t"
 					     "out %al, $0xA0\n\t"
@@ -122,6 +126,8 @@ void timer_interrupt(void)
 			__asm__ __volatile__(
 					     "movq %0, %%cr3\n\t"
 					     ::"r"(next->cr3_register));			
+			__asm__ __volatile__("movq %%rsp, %[tss_rsp0]\n\t"
+					     :[tss_rsp0]"=m"(tss_entry.rsp0));
 			__asm__ __volatile__("mov $0x20, %al\n\t"
 					     "out %al, $0x20\n\t"
 					     "out %al, $0xA0\n\t"
@@ -147,7 +153,7 @@ void init_schedule()
 }
 
 pml4_e proc_pml_entries[512]__attribute__((aligned(0x1000)));
-void create_new_process(task_struct* task_struct_ptr, u64int function_ptr)
+void create_kernel_process(task_struct* task_struct_ptr, u64int function_ptr)
 {
 	/* Set up task parameters as per what IRETQ expects*/
 	task_struct_ptr->kernel_stack[127] = 0x10;
@@ -184,9 +190,51 @@ void create_new_process(task_struct* task_struct_ptr, u64int function_ptr)
 
 	cr3_reg process_cr3;
 	create_cr3_reg(&process_cr3, (u64int)page_addr->phys_addr, 0x00, 0x00);
-
 	task_struct_ptr->cr3_register = process_cr3;
 	/* Add to the ready list */
 	add_to_ready_list(task_struct_ptr);
 
+}
+
+void create_user_process(task_struct* task_struct_ptr, u64int function_ptr) 
+{
+	/* Set up task parameters as per what IRETQ expects*/
+	task_struct_ptr->kernel_stack[127] = 0x23;
+	task_struct_ptr->kernel_stack[126] = (u64int)&task_struct_ptr->kernel_stack[127];
+	task_struct_ptr->kernel_stack[125] = 0x20202;
+	task_struct_ptr->kernel_stack[124] = 0x1b;
+	task_struct_ptr->kernel_stack[123] = function_ptr;
+
+	task_struct_ptr->rsp_register = (u64int)&task_struct_ptr->kernel_stack[123];
+	task_struct_ptr->rip_register = function_ptr;
+	task_struct_ptr->rflags = 0x20202;
+	task_struct_ptr->next = NULL;
+	task_struct_ptr->last_run = NULL;
+	task_struct_ptr->proc_id = PROC_ID_TOP++;
+	task_struct_ptr->vm_head = NULL;
+	/* Set up the process address space */
+	/* This has to be aligned on 0x1000 boundaries and need the physical address */
+	phys_vir_addr* page_addr = get_free_phys_page();
+	pml4_e* pml_entries_ptr = (pml4_e*)page_addr->vir_addr;
+
+	/* Map the higher memory by copying the PML4E*/
+	int i = 0;
+
+	/* Create blank PML4E */
+	for(i=0; i<512; i++){
+		if (i==PML4_REC_SLOT) {
+			/* The recursive mapping */
+			create_pml4_e(&pml_entries_ptr[i], (u64int)page_addr->phys_addr, 0x0, 0x07, 0x00);
+		} else {
+			pml_entries_ptr[i] = pml_entries[i];			
+
+		}
+	}
+
+	cr3_reg process_cr3;
+	create_cr3_reg(&process_cr3, (u64int)page_addr->phys_addr, 0x00, 0x00);
+	task_struct_ptr->cr3_register = process_cr3;
+	/* Add to the ready list */
+	add_to_ready_list(task_struct_ptr);
+	
 }

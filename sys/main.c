@@ -32,6 +32,8 @@ extern void initialize_gdt();
 extern void initialize_idt();
 extern void initialize_tss();
 
+extern void switch_to_user_mode(void);
+
 /* These should NOT be used directly outside of the first initialization*/
 pml4_e pml_entries[512] __attribute__((aligned(0x1000)));
 pdp_e pdp_entries[512] __attribute__((aligned(0x1000))); // First table of PDP
@@ -74,9 +76,10 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 	__asm__ __volatile__("movq %0, %%rsp" : :"a"(&stack[INITIAL_STACK_SIZE]));
 	//	kprintf("The tarfs region: [%p to %p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
        	initialize_tss();
+	make_process_from_elf("bin/hi");
+      	make_process_from_elf("bin/test");
+	make_process_from_elf("bin/hello");
 	__asm__("sti\n\t");
-	//	dump_tarfs_contents();
-	//       	switch_to_user_mode();
 	while(1);
 }
 

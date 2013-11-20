@@ -1,4 +1,4 @@
-#include<sys/syscall.h>
+#include<syscall.h>
 #include<common.h>
 
 int printf(const char *format, ...) {

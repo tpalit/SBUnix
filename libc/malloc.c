@@ -1,5 +1,5 @@
 #include<stdio.h>
-#include<sys/syscall.h>
+#include<syscall.h>
 #include<common.h>
 
 void* malloc(u64int size) {

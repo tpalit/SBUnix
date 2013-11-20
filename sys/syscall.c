@@ -4,7 +4,7 @@
 
 
 #include<common.h>
-#include<sys/syscall.h>
+#include<syscall.h>
 #include<sys/proc_mgr.h>
 #include<sys/kstring.h>
 #include<stdio.h>
@@ -16,10 +16,14 @@ extern task_struct* CURRENT_TASK;
 /* These will get invoked in kernel mode. */
 int do_write(char* s)
 {
+	/*
 	while(*s != '\0'){
 		putchar(*s++);
 	}
 	return 42;
+	*/
+	kprintf(s);
+	return 0;
 }
 
 int do_read(char* s)
@@ -34,7 +38,6 @@ int do_malloc(u32int mem_size)
 	 * @TODO - Check if this is assumption right.
 	 * Need to expand its heap. 
 	 */
-	kprintf("inside do_malloc for %d", mem_size);
 	vm_struct* vma_ptr = CURRENT_TASK->vm_head;
         while (vma_ptr != NULL){
 		if (kstrcmp(vma_ptr->vm_type, "HEAP")){
@@ -47,7 +50,6 @@ int do_malloc(u32int mem_size)
 	}
 	ret_ptr = vma_ptr->vm_end;
 	vma_ptr->vm_end+=mem_size;
-	kprintf("ret_ptr = %p", ret_ptr);
 	return ret_ptr;
 }
 

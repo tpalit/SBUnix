@@ -91,7 +91,6 @@ void buffer (unsigned int op, unsigned char key)
 		buff[buffp++]=key;
 	}
 	else if(op==3){
-		kprintf("Trying to load %s\n", buff);
 		make_process_from_elf(buff);
 		buffp = 0;
 		int i = 0;

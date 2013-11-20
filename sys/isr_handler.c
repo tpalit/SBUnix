@@ -80,13 +80,16 @@ void isr_handler_body_13(void)
 void isr_handler_body_14(void)
 {
 	volatile u64int faulting_address = 0x0;
+	volatile u64int error_code = 0x0;
 	vm_struct* vma_to_map = NULL;
 	u8int okay_to_map = 0;
 	__asm__ __volatile__("movq %%cr2, %[cr2_register]\n\t":[cr2_register]"=r"(faulting_address));
-	if (faulting_address >= KERN_VIR_START) {
+	__asm__ __volatile__("movq %%r10, %[error_code]\n\t":[error_code]"=r"(error_code));
+	/* If the kernel faults or there's a fault in accessing a Present page, stop. */
+	if (faulting_address >= KERN_VIR_START || (error_code & 0x01)) { 
 		/* Page fault in Kernel */
 		dump_regs();
-		panic("Page fault Happened!");
+		panic("Bad type of Page fault Happened!");
 	} else {
 		/* @TODO - Assume that the CURRENT_TASK has caused the page fault. 
 		*  Check if this is always true.
@@ -103,11 +106,10 @@ void isr_handler_body_14(void)
 		}
 	}
 	if(okay_to_map){
-		kprintf("Trying to map %p\n", faulting_address);
-		kmmap((void*)vma_to_map->vm_start, vma_to_map->vm_end-vma_to_map->vm_start,0, 0, 0, 0);
-		
+		kmmap((void*)vma_to_map->vm_start, 
+		      vma_to_map->vm_end-vma_to_map->vm_start,
+		      0, 0, 0, 0);
 	}
-	
 }
 
 
@@ -162,6 +164,4 @@ void print_time_on_screen(time_struct* time_s)
 	*bt_rt_crner++ = 0x07;
 	*bt_rt_crner++ = secs[1];
 	*bt_rt_crner++ = 0x07;
-	
-
 }

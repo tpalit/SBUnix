@@ -27,7 +27,7 @@ void zero_out_page(nz_free_list page_frame)
 	u8int* ptr = (u8int*)page_frame->pgfrm_saddr;
 	int i=0;
 	for(; i<PAGE_SIZE; i++){
-		*(ptr+i) = 0xAB;
+		*(ptr+i) = 0x00;
 	}
 }
 /* 
@@ -67,7 +67,7 @@ void init_pg_frames(u64int free_start, u64int free_end,
 			nz_prev_free_item->next_pgfrm = (nz_free_list)(KERN_VIR_START+(u64int)nz_free_item);
 		}
 		nz_prev_free_item = nz_free_item;
-		//		zero_out_page(nz_free_item);
+		zero_out_page(nz_free_item);
 		nz_free_item+=sizeof(free_pgfrm);
 	}
 

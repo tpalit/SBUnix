@@ -16,8 +16,6 @@ u64int tarfs_atoi(char* s, u8int base)
 	u8int i = 0;
 	for(i=0;i<11;i++) {
 		val = val*base+s[i]-'0';
-		//		kprintf("s[i] = %c\n", s[i]);
-		//		kprintf("val = %d\n", val);
 	}
 	return val;
 }
@@ -31,7 +29,7 @@ task_struct* make_process_from_elf(char* path)
 	task_struct* new_task = NULL;
 	if(NULL != ehdr){
 		new_task = (task_struct*)kmalloc(sizeof(task_struct));
-		create_new_process(new_task, (u64int)ehdr->e_entry);
+		create_kernel_process(new_task, (u64int)ehdr->e_entry);
 		/* Parse and load the segments */
        		parse_load_elf_segments(ehdr, new_task);
 		/* Give the task some heap memory */
@@ -91,13 +89,6 @@ void parse_load_elf_segments(Elf64_Ehdr* elf64_ehdr_ptr, task_struct* task_ptr)
 	int headerCount = elf64_ehdr_ptr->e_phnum;
 	Elf64_Phdr* phdr_ptr = (Elf64_Phdr*)(((u64int)elf64_ehdr_ptr)+elf64_ehdr_ptr->e_phoff);
 	for (;headerCount>0;headerCount--) {
-		/*
-		  kprintf("Program header type = %x\n", phdr_ptr->p_type);
-		  kprintf("Program offset = %x\n", phdr_ptr->p_offset);
-		  kprintf("Program virtual address = %x\n", phdr_ptr->p_vaddr);
-		  kprintf("Program flags = %x\n", phdr_ptr->p_flags);
-		  kprintf("Program size in memory = %x\n", phdr_ptr->p_memsz);
-		*/
 	       	load_elf_segment(elf64_ehdr_ptr, phdr_ptr, task_ptr);
 		phdr_ptr++;
 	}	
@@ -138,7 +129,7 @@ void load_elf_segment(Elf64_Ehdr* elf64_ehdr_ptr, Elf64_Phdr* elf64_phdr_ptr, ta
 		kstrcpy(proc_vma->vm_type, "OTHR");
 	}
 	proc_vma->vm_next = NULL;
-	/* Attach this vma to the list given in mmstruct */
+	/* Attach this vma to the list */
 	if (task_ptr->vm_head == NULL){
 		task_ptr->vm_head = proc_vma;
 	} else {

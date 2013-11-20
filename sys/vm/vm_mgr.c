@@ -288,11 +288,13 @@ void map_phys_vir_pg(u64int phys_addr, u64int vir_addr)
 		set_base_addr(pd_entry_ptr, free_page->pgfrm_saddr);
 		pt_ptr = (u64int*)PT_ENTRY(vir_addr);
 		pt_entry_ptr = pt_ptr+PT_OFFSET((u64int)vir_addr);
+		kprintf("Created pte");
 		create_pt_e(pt_entry_ptr, 0x0, 0x0, 0x06, 0x0);
 	}
 	if(is_present((u64int)*pt_entry_ptr)){
 		panic("Tried to map an already mapped page.");
 	} else {
+		create_pt_e(pt_entry_ptr, 0x0, 0x0, 0x06, 0x0);
 		set_present(pt_entry_ptr);
 		set_base_addr(pt_entry_ptr, phys_addr);
 	}
@@ -339,7 +341,6 @@ void* kmmap(void* start_addr, u64int length, u32int prot, u32int flags, u32int f
 	u64int addr = (u64int)start_addr;
 	u64int bytes_allocated = 0;
 	nz_free_list free_page = NULL;
-	kprintf("Trying to map %x bytes at %p\n", length, start_addr);
 	while(bytes_allocated < length) {
 		free_page = alloc_phys_pg(KERN_PG);
 		map_phys_vir_pg(free_page->pgfrm_saddr, (u64int)addr);
