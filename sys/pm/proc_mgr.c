@@ -36,6 +36,9 @@ void __switch_to()
 	*/
 }
 
+/**
+ * Adds a task_struct to the ready list. 
+ */
 void add_to_ready_list(task_struct* task_struct_ptr)
 {
 	task_struct* ready_list_ptr = READY_LIST;
@@ -75,18 +78,30 @@ void schedule()
 }
 
 /*
- * The handler for the timer interrupt. 
- * This will print the time since boot on the
- * bottom right corner of the screen.
+ * This is the heart of the scheduling code. 
+ * Note: To avoid unnecessary return addresses on the stack, 
+ * this method gets directly called on a timer interrupt happening. 
+ * The context switching code relies on the kernel stack per process.
+ * While creating a new process this is initialized to the order in
+ * which IRETQ pops - rip, cs, rflags, rsp and ss. 
+ * 
+ * The first time this or schedule() is invoked, extra things
+ * need to be done. So that's handled separately.
+ *
+ * In short, it does the following things -
+ * 1. Save the old kernel stack
+ * 2. Load the new kernel stack
+ * 3. Moves the top of the kernel stack to the tss.rsp0
+ *
+ * @TODO - Code is in extended assembly, which is probably a bad idea.
  */
-void timer_interrupt(void)
+void schedule_on_timer(void)
 {
 	u64int old_rsp;
 	__asm__ __volatile__("movq %%rsp, %[old_rsp]": [old_rsp] "=r"(old_rsp));
 	ticks++; /* Global variable */
 	if(READY_LIST != NULL) {
 		if (!scheduler_inited){
-			/* The first time schedule gets invoked - additional processing needs done. */
 			if (READY_LIST == NULL) {
 				return;
 			}
@@ -94,8 +109,6 @@ void timer_interrupt(void)
 			READY_LIST = READY_LIST->next;
 			CURRENT_TASK = prev;
 			scheduler_inited = 1;
-			/* Need to switch the kernel stack to that of the first process. */
-			/* IRETQ pops in the order of rip, cs, rflags, rsp and ss. */
 			__asm__ __volatile__(
 					     "movq %[prev_rsp], %%rsp\n\t"
 					     :
@@ -103,8 +116,7 @@ void timer_interrupt(void)
 			__asm__ __volatile__(
 					     "movq %0, %%cr3\n\t"
 					     ::"r"(prev->cr3_register));
-			__asm__ __volatile__("movq %%rsp, %[tss_rsp0]\n\t"
-					     :[tss_rsp0]"=m"(tss_entry.rsp0));
+			tss_entry.rsp0 = (u64int)&prev->kernel_stack[KERNEL_STACK_SIZE-1];
 			__asm__ __volatile__("mov $0x20, %al\n\t"
 					     "out %al, $0x20\n\t"
 					     "out %al, $0xA0\n\t"
@@ -118,7 +130,6 @@ void timer_interrupt(void)
 					     :[prev_rsp] "=m" (prev->rsp_register)
 					     :[old_rsp] "r" (old_rsp),
 					     [next_rsp] "m" (next->rsp_register));
-
 			CURRENT_TASK = READY_LIST;
 			/* Add prev to the end of the READY_LIST */
 			add_to_ready_list(prev);
@@ -126,16 +137,17 @@ void timer_interrupt(void)
 			__asm__ __volatile__(
 					     "movq %0, %%cr3\n\t"
 					     ::"r"(next->cr3_register));			
-			__asm__ __volatile__("movq %%rsp, %[tss_rsp0]\n\t"
-					     :[tss_rsp0]"=m"(tss_entry.rsp0));
+			tss_entry.rsp0 = (u64int)&next->kernel_stack[KERNEL_STACK_SIZE-1];
 			__asm__ __volatile__("mov $0x20, %al\n\t"
 					     "out %al, $0x20\n\t"
 					     "out %al, $0xA0\n\t"
 					     "iretq\n\t");
-
 		}
 	} else {
-		/* Code should never reach here, as READY_LIST should never be null */
+		/* 
+		 * Code should never reach here, as READY_LIST should never be null. 
+		 * We'll always have an idle kernel process.
+		 */
 		__asm__ __volatile("mov $0x20, %al\n\t"
 				   "out %al, $0x20\n\t"
 				   "out %al, $0xA0\n\t"
@@ -144,15 +156,10 @@ void timer_interrupt(void)
 
 }
 
-void init_schedule()
-{
-	scheduler_inited = 1;
-	/* Need to switch the kernel stack to that of the first process. */
-	__asm__ __volatile("movq %[prev_sp], %%rsp\n\t"::[prev_sp] "m" (prev->rsp_register));
-	__asm__ __volatile("movq %[prev_bp], %%rbp\n\t"::[prev_bp] "m" (prev->rsp_register));
-}
-
-pml4_e proc_pml_entries[512]__attribute__((aligned(0x1000)));
+/**
+ * Sets up the kernel process. This includes, setting up the kernel to 
+ * something that the timer_interrupt expects.
+ */
 void create_kernel_process(task_struct* task_struct_ptr, u64int function_ptr)
 {
 	/* Set up task parameters as per what IRETQ expects*/
@@ -187,13 +194,11 @@ void create_kernel_process(task_struct* task_struct_ptr, u64int function_ptr)
 
 		}
 	}
-
 	cr3_reg process_cr3;
 	create_cr3_reg(&process_cr3, (u64int)page_addr->phys_addr, 0x00, 0x00);
 	task_struct_ptr->cr3_register = process_cr3;
 	/* Add to the ready list */
 	add_to_ready_list(task_struct_ptr);
-
 }
 
 void create_user_process(task_struct* task_struct_ptr, u64int function_ptr) 
@@ -236,5 +241,4 @@ void create_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->cr3_register = process_cr3;
 	/* Add to the ready list */
 	add_to_ready_list(task_struct_ptr);
-	
 }

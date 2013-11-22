@@ -35,7 +35,6 @@ struct task_struct
 
 typedef struct task_struct task_struct;
 
-
 void schedule();
 
 void __switch_to();

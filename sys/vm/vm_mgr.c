@@ -232,7 +232,6 @@ void init_pg_dir_pages(pml4_e *pml4_entries)
 	for(i=0; i<512; i++){
 		create_pt_e(&pt_entries[i], 0x0, 0x0, 0x06, 0x00);
 	}
-		
 }
 
 void map_phys_vir_pg(u64int phys_addr, u64int vir_addr)
@@ -288,7 +287,6 @@ void map_phys_vir_pg(u64int phys_addr, u64int vir_addr)
 		set_base_addr(pd_entry_ptr, free_page->pgfrm_saddr);
 		pt_ptr = (u64int*)PT_ENTRY(vir_addr);
 		pt_entry_ptr = pt_ptr+PT_OFFSET((u64int)vir_addr);
-		kprintf("Created pte");
 		create_pt_e(pt_entry_ptr, 0x0, 0x0, 0x06, 0x0);
 	}
 	if(is_present((u64int)*pt_entry_ptr)){

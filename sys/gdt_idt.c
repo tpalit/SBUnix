@@ -27,7 +27,7 @@ extern void _isr_handler_head_0(void); /* Divide by zero */
 extern void isr_handler_body_10(void); /* TSS */
 extern void _isr_handler_head_13(void); /* GP */
 extern void _isr_handler_head_14(void); /* PF */
-extern void timer_interrupt(void); /* Timer */
+extern void schedule_on_timer(void); /* Timer */
 extern void _isr_handler_head_33(void); /* Keyboard */
 
 static void create_gdt_entry(s32int, u32int, u32int, u8int, u8int);
@@ -122,7 +122,7 @@ void initialize_idt()
 	 * The ISRs are in the "code segment", so we provide a selector
 	 * of 0x08 offset into our GDT.
 	 */
-	create_idt_entry(32, (u64int)timer_interrupt, 0x08, 0x0, 0x8E);
+	create_idt_entry(32, (u64int)schedule_on_timer, 0x08, 0x0, 0x8E);
 	create_idt_entry(33, (u64int)_isr_handler_head_33, 0x08, 0x0, 0x8E);
 	
 	/*
@@ -137,13 +137,13 @@ void initialize_idt()
 	create_idt_entry(13, (u64int)_isr_handler_head_13, 0x08, 0x0, 0x8E);
 	create_idt_entry(14, (u64int)_isr_handler_head_14, 0x08, 0x0, 0x8E);
 
-	/*
+
 	create_idt_entry(8, (u64int)_isr_handler_head_14, 0x08, 0x0, 0x8E);
 	create_idt_entry(11, (u64int)_isr_handler_head_14, 0x08, 0x0, 0x8E);
 	create_idt_entry(12, (u64int)_isr_handler_head_14, 0x08, 0x0, 0x8E);
 	create_idt_entry(17, (u64int)_isr_handler_head_14, 0x08, 0x0, 0x8E);
 	create_idt_entry(30, (u64int)_isr_handler_head_14, 0x08, 0x0, 0x8E);
-	*/
+
 
 	create_idt_entry(128, (u64int) syscall_handler, 0x08, 0x0, 0xEE);
 	idtr_ptr.table_limit = sizeof(idt_entry_t)*256;

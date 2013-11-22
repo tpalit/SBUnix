@@ -47,7 +47,6 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 		uint32_t type;
 	}__attribute__((packed)) *smap;
 	int i=0;
-	// kernel starts here
 	struct smap_t smap_mem_regs[2]; 
 	clear_terminal();
 	while(modulep[0] != 0x9001) modulep += modulep[1]+2;
@@ -74,11 +73,10 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 	/* Setup the stack again. */
 	__asm__ __volatile__("movq %0, %%rbp" : :"a"(&stack[0]));
 	__asm__ __volatile__("movq %0, %%rsp" : :"a"(&stack[INITIAL_STACK_SIZE]));
-	//	kprintf("The tarfs region: [%p to %p]\n", &_binary_tarfs_start, &_binary_tarfs_end);
        	initialize_tss();
 	make_process_from_elf("bin/hi");
-      	make_process_from_elf("bin/test");
-	make_process_from_elf("bin/hello");
+      	make_process_from_elf("bin/hello");
+	//	make_process_from_elf("bin/hello");
 	__asm__("sti\n\t");
 	while(1);
 }
@@ -106,8 +104,6 @@ void boot(void)
 		temp1 += 1, temp2 += 2
 	) *temp2 = *temp1;
 	while(1);
-
-
 }
 
 

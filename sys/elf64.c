@@ -4,6 +4,7 @@
 
 #include<stdio.h>
 #include<sys/vm_mgr.h>
+#include<sys/pm_mgr.h>
 #include<sys/elf64.h>
 #include<common.h>
 #include<sys/tarfs.h>
@@ -29,7 +30,7 @@ task_struct* make_process_from_elf(char* path)
 	task_struct* new_task = NULL;
 	if(NULL != ehdr){
 		new_task = (task_struct*)kmalloc(sizeof(task_struct));
-		create_kernel_process(new_task, (u64int)ehdr->e_entry);
+		create_user_process(new_task, (u64int)ehdr->e_entry);
 		/* Parse and load the segments */
        		parse_load_elf_segments(ehdr, new_task);
 		/* Give the task some heap memory */
@@ -116,7 +117,7 @@ void load_elf_segment(Elf64_Ehdr* elf64_ehdr_ptr, Elf64_Phdr* elf64_phdr_ptr, ta
 	/* Load back the old cr3 */
 	__asm__ __volatile__(
 			     "movq %0, %%cr3\n\t"
-			     ::"r"(task_ptr->cr3_register));	
+			     ::"r"(old_cr3));	
 	/* Creae a VMA struct for this region */
 	vm_struct* proc_vma = (vm_struct*)kmalloc(sizeof(vm_struct));
 	proc_vma->vm_start = elf64_phdr_ptr->p_vaddr;
