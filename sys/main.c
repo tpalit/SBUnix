@@ -17,6 +17,7 @@
 #define LOW_MEM 0
 #define HI_MEM 1
 
+void init_memory(uint32_t* , void*, void*);
 void clear_terminal(void);
 void init_timer(int);
 
@@ -42,46 +43,22 @@ pdp_e pdp_entries[512] __attribute__((aligned(0x1000))); // First table of PDP
 pd_e pd_entries[512] __attribute__((aligned(0x1000))); // First table of PD
 pt_e pt_entries[512] __attribute__((aligned(0x1000))); // First table of PT
 cr3_reg cr3_register;
+
 void start(uint32_t* modulep, void* physbase, void* physfree)
 {
-	struct smap_t {
-		uint64_t base, length;
-		uint32_t type;
-	}__attribute__((packed)) *smap;
-	int i=0;
-	struct smap_t smap_mem_regs[2]; 
 	clear_terminal();
-	while(modulep[0] != 0x9001) modulep += modulep[1]+2;
-	for(smap = (struct smap_t*)(modulep+2); 
-	    smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); 
-	    ++smap) {
-		if (smap->type == 1 /* memory */ && smap->length != 0) {
-			smap_mem_regs[i].base = smap->base;
-			smap_mem_regs[i].length = smap->length;
-			smap_mem_regs[i++].type = smap->type;
-		}
-	}
-	
-	init_pg_frames(smap_mem_regs[HI_MEM].base, 
-		       smap_mem_regs[HI_MEM].base+smap_mem_regs[1].length, 
-		       &physbase, 
-		       &physfree);
-	init_pg_dir_pages(pml_entries);
-	map_phys_vir_range((u64int)physbase, (u64int)physfree, (u64int)(KERN_VIR_START+physbase));	
-	create_cr3_reg(&cr3_register, (u64int)pml_entries-KERN_VIR_START, 0x00, 0x00);
+	init_memory(modulep, physbase, physfree);
 	__asm__ __volatile__(
 			     "movq %0, %%cr3\n\t"
 			     ::"a"(cr3_register));
 	/* Setup the stack again. */
 	__asm__ __volatile__("movq %0, %%rbp" : :"a"(&stack[0]));
-	__asm__ __volatile__("movq %0, %%rsp" : :"a"(&stack[INITIAL_STACK_SIZE]));
+	__asm__ __volatile__("movq %0, %%rsp" : :"a"(&stack[INITIAL_STACK_SIZE-1]));
        	initialize_tss();
 	start_idle_process();
-
       	make_process_from_elf("bin/hi");
        	make_process_from_elf("bin/hello");
 	make_process_from_elf("bin/test");
-
 	__asm__("sti\n\t");
 	while(1);
 }
@@ -111,4 +88,30 @@ void boot(void)
 	while(1);
 }
 
-
+void init_memory(uint32_t* modulep, void* physbase, void* physfree)
+{
+	struct smap_t {
+		uint64_t base, length;
+		uint32_t type;
+	}__attribute__((packed)) *smap;
+	int i=0;
+	struct smap_t smap_mem_regs[2]; 
+	while(modulep[0] != 0x9001) modulep += modulep[1]+2;
+	for(smap = (struct smap_t*)(modulep+2); 
+	    smap < (struct smap_t*)((char*)modulep+modulep[1]+2*4); 
+	    ++smap) {
+		if (smap->type == 1 /* memory */ && smap->length != 0) {
+			smap_mem_regs[i].base = smap->base;
+			smap_mem_regs[i].length = smap->length;
+			smap_mem_regs[i++].type = smap->type;
+		}
+	}
+	
+	init_pg_frames(smap_mem_regs[HI_MEM].base, 
+		       smap_mem_regs[HI_MEM].base+smap_mem_regs[1].length, 
+		       &physbase, 
+		       &physfree);
+	init_pg_dir_pages(pml_entries);
+	map_phys_vir_range((u64int)physbase, (u64int)physfree, (u64int)(KERN_VIR_START+physbase));	
+	create_cr3_reg(&cr3_register, (u64int)pml_entries-KERN_VIR_START, 0x00, 0x00);
+}
