@@ -37,6 +37,8 @@ task_struct* make_process_from_elf(char* path)
 		allocate_heap(new_task);
 		/* Give the task some stack memory */
 		allocate_stack(new_task);
+	} else {
+		kprintf("Can't find file\n");
 	}
 	return new_task;
 }

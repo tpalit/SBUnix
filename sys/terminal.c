@@ -94,7 +94,7 @@ void buffer (unsigned int op, unsigned char key)
 		make_process_from_elf(buff);
 		buffp = 0;
 		int i = 0;
-		for(i = buffp;i>=0;i--) {
+		for(i = 0; i<BUFF_SIZE; i++) {
 			buff[i]=NULL; // clearing the buffer
 		}
 	}

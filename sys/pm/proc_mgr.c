@@ -34,7 +34,18 @@ u8int scheduler_inited = 0;
 void add_to_ready_list(task_struct* task_struct_ptr)
 {
 	task_struct* ready_list_ptr = READY_LIST;
-	// The new process should be added at the end, so it's next should be NULL.
+	/* 
+	 * First check if the process is already there. 
+	 * Does this look like a hack? Yes it is!
+	 */
+	while(ready_list_ptr != NULL) {
+		if (task_struct_ptr == ready_list_ptr) {
+			return;
+		}
+		ready_list_ptr = ready_list_ptr->next;
+	}
+	ready_list_ptr = READY_LIST;
+	/* The new process should be added at the end, so it's next should be NULL. */
 	task_struct_ptr->next = NULL;
 	if(ready_list_ptr == NULL){
 		READY_LIST = task_struct_ptr;
