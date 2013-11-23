@@ -7,7 +7,7 @@ int main(void)
 	while(1) {
 		i++;
 		if(i%100000 == 0) {
-			printf("Tapti");
+      			printf("Tapti");
 			k++;
 			if(k>30) break;
 		}

@@ -87,6 +87,30 @@ pt_e* create_pt_e(pt_e* pt_ptr, u64int phys_base_addr, u8int avl, u8int flags,
 	return pt_ptr;
 }
 
+void init_pdp_tbl(u64int* pdp_entries)
+{
+	int i = 0;
+	for (i=0; i<512; i++) {
+		create_pdp_e(&pdp_entries[i], 0x0, 0x0, 0x06, 0x00);		
+	}
+}
+
+void init_pd_tbl(u64int* pd_entries)
+{
+	int i = 0;
+	for (i=0; i<512; i++) {
+		create_pd_e(&pd_entries[i], 0x0, 0x0, 0x06, 0x00);		
+	}
+}
+
+void init_pt_tbl(u64int* pt_entries)
+{
+	int i = 0;
+	for (i=0; i<512; i++) {
+		create_pt_e(&pt_entries[i], 0x0, 0x0, 0x06, 0x00);		
+	}
+
+}
 
 /* 
  * Populate the contents of the cr3 register.
@@ -133,6 +157,9 @@ u64int* set_base_addr(u64int* entry, u64int base_addr)
 	return entry;
 }
 
+/**
+ * Map the kernel's static (as opposed to "dynamic") memory. 
+ */
 void static_map_pg(u64int vir_pg, u64int phys_pg)
 {
 	pml4_e* pml4e_entry;
@@ -234,6 +261,9 @@ void init_pg_dir_pages(pml4_e *pml4_entries)
 	}
 }
 
+/**
+ * Map dynamically allocated memory. get_free_page(), etc.
+ */
 void map_phys_vir_pg(u64int phys_addr, u64int vir_addr)
 {
 	u64int* pt_ptr = 0;
@@ -260,10 +290,11 @@ void map_phys_vir_pg(u64int phys_addr, u64int vir_addr)
 		set_present(pml4_entry_ptr);
 		set_base_addr(pml4_entry_ptr, free_page->pgfrm_saddr);
 		pdp_ptr = (u64int*)PDP_ENTRY(vir_addr);
+		/* Initialize the values */
+		init_pdp_tbl(pdp_ptr);
 		pdp_entry_ptr = pdp_ptr+PDPT_OFFSET((u64int)vir_addr);
 		create_pdp_e(pdp_entry_ptr, 0x0, 0x0, 0x06, 0x0); 
 	}
-
 	if(is_present((u64int)*pdp_entry_ptr)){
 		pd_ptr = (u64int*)PD_ENTRY(vir_addr);
 		pd_entry_ptr = pd_ptr+PD_OFFSET((u64int)vir_addr);
@@ -273,6 +304,8 @@ void map_phys_vir_pg(u64int phys_addr, u64int vir_addr)
 		set_present(pdp_entry_ptr);
 		set_base_addr(pdp_entry_ptr, free_page->pgfrm_saddr);
 		pd_ptr = (u64int*)PD_ENTRY(vir_addr);
+		/* Initialize the values */
+		init_pd_tbl(pd_ptr);
 		pd_entry_ptr = pd_ptr+PD_OFFSET((u64int)vir_addr);
 		create_pd_e(pd_entry_ptr, 0x0, 0x0, 0x06, 0x0);
 	}
@@ -286,6 +319,8 @@ void map_phys_vir_pg(u64int phys_addr, u64int vir_addr)
 		set_present(pd_entry_ptr);
 		set_base_addr(pd_entry_ptr, free_page->pgfrm_saddr);
 		pt_ptr = (u64int*)PT_ENTRY(vir_addr);
+		/* Initialize the values */
+		init_pt_tbl(pt_ptr);
 		pt_entry_ptr = pt_ptr+PT_OFFSET((u64int)vir_addr);
 		create_pt_e(pt_entry_ptr, 0x0, 0x0, 0x06, 0x0);
 	}

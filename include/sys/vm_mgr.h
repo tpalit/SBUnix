@@ -36,6 +36,10 @@ int is_present(u64int);
 void set_present(u64int*);
 u64int find_base_addr(u64int);
 
+void init_pdp_tbl(u64int*);
+void init_pd_tbl(u64int*);
+void init_pt_tbl(u64int*);
+
 /* Macros for the recursive slot */
 #define PML4_REC_SLOT 510UL
 

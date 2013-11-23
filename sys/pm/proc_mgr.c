@@ -94,6 +94,7 @@ void schedule()
  * 3. Moves the top of the kernel stack to the tss.rsp0
  *
  * @TODO - Code is in extended assembly, which is probably a bad idea.
+ * Converting to pure assembly is a better idea as suggested by Yongming. 
  */
 void schedule_on_timer(void)
 {
