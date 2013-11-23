@@ -233,7 +233,7 @@ void schedule()
  */
 void schedule_on_timer(void)
 {
-	if(READY_LIST != NULL) {
+	if (!scheduler_inited || (READY_LIST != NULL && CURRENT_TASK->time_slices <= 0)) {
 		u64int old_rsp;
 		__asm__ __volatile__(
 				     "pushq %rax\n\t"
@@ -253,7 +253,6 @@ void schedule_on_timer(void)
 				     "pushq %r15\n\t");
 		__asm__ __volatile__("movq %%rsp, %[old_rsp]": [old_rsp] "=r"(old_rsp));
 		ticks++; /* Global variable */
-		
 		if (!scheduler_inited){
 			/* 
 			 * The first time schedule is called, we 
@@ -338,11 +337,27 @@ void schedule_on_timer(void)
 					     "iretq\n\t");
 		}
 	} else {
-		/* No item in the READY_LIST, continue running the existing process */
-			__asm__ __volatile__("mov $0x20, %al\n\t"
-					     "out %al, $0x20\n\t"
-					     "out %al, $0xA0\n\t"
-					     "iretq\n\t");		
+		/* No need to reschedule, continue running the existing process */
+		CURRENT_TASK->time_slices--;
+		__asm__ __volatile__("mov $0x20, %al\n\t"
+				     "out %al, $0x20\n\t"
+				     "out %al, $0xA0\n\t"
+				     "iretq\n\t");		
+	}
+}
+
+
+/**
+ * Check if the current processes's time slice expires.
+ */
+u8int is_reschedule_needed() {
+	if (!scheduler_inited) {
+		return 1;
+	}
+	if (READY_LIST != NULL && CURRENT_TASK->time_slices <= 0) {
+		return 1;
+	} else {
+		return 0;
 	}
 }
 
@@ -378,7 +393,8 @@ void create_kernel_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->rsp_register = (u64int)&task_struct_ptr->kernel_stack[108];
 
 	task_struct_ptr->rip_register = function_ptr;
-	task_struct_ptr->rflags = 0x20202;
+	task_struct_ptr->time_slices = DEFAULT_TIME_SLICE;
+	task_struct_ptr->rflags = DEFAULT_FLAGS;
 	task_struct_ptr->next = NULL;
 	task_struct_ptr->last_run = NULL;
 	task_struct_ptr->proc_id = PROC_ID_TOP++;
@@ -413,7 +429,7 @@ void create_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 	/* Set up task parameters as per what IRETQ expects*/
 	task_struct_ptr->kernel_stack[127] = 0x23;
 	task_struct_ptr->kernel_stack[126] = (u64int)&task_struct_ptr->kernel_stack[127];
-	task_struct_ptr->kernel_stack[125] = 0x20202;
+	task_struct_ptr->kernel_stack[125] = DEFAULT_FLAGS;
 	task_struct_ptr->kernel_stack[124] = 0x1b;
 	task_struct_ptr->kernel_stack[123] = function_ptr;
 
@@ -422,6 +438,7 @@ void create_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 	for (; indx>108; indx--) {
 		task_struct_ptr->kernel_stack[indx] = 0x0;
 	}
+	task_struct_ptr->time_slices = DEFAULT_TIME_SLICE;
 	task_struct_ptr->rsp_register = (u64int)&task_struct_ptr->kernel_stack[108];
 	task_struct_ptr->rip_register = function_ptr;
 	task_struct_ptr->rflags = 0x20202;

@@ -47,14 +47,17 @@ cr3_reg cr3_register;
 void start(uint32_t* modulep, void* physbase, void* physfree)
 {
 	clear_terminal();
+	kprintf("Booting SBUnix ...\n");
+	kprintf("Initializing memory ...\n");
 	init_memory(modulep, physbase, physfree);
 	__asm__ __volatile__(
 			     "movq %0, %%cr3\n\t"
 			     ::"a"(cr3_register));
 	/* Setup the stack again. */
 	__asm__ __volatile__("movq %0, %%rbp" : :"a"(&stack[0]));
-	__asm__ __volatile__("movq %0, %%rsp" : :"a"(&stack[INITIAL_STACK_SIZE-1]));
+	__asm__ __volatile__("movq %0, %%rsp" : :"a"(&stack[INITIAL_STACK_SIZE]));
        	initialize_tss();
+	kprintf("Initializing idle process ... \n");
 	start_idle_process();
       	make_process_from_elf("bin/hi");
        	make_process_from_elf("bin/hello");
