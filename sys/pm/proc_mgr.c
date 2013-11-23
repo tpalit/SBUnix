@@ -222,27 +222,27 @@ void schedule()
  */
 void schedule_on_timer(void)
 {
-	u64int old_rsp;
-	__asm__ __volatile__(
-			     "pushq %rax\n\t"
-			     "pushq %rbx\n\t"
-			     "pushq %rcx\n\t"
-			     "pushq %rdx\n\t"
-			     "pushq %rbp\n\t"
-			     "pushq %rsi\n\t"
-			     "pushq %rdi\n\t"
-			     "pushq %r8\n\t"
-			     "pushq %r9\n\t"
-			     "pushq %r10\n\t"
-			     "pushq %r11\n\t"
-			     "pushq %r12\n\t"
-			     "pushq %r13\n\t"
-			     "pushq %r14\n\t"
-			     "pushq %r15\n\t");
-	__asm__ __volatile__("movq %%rsp, %[old_rsp]": [old_rsp] "=r"(old_rsp));
-	ticks++; /* Global variable */
-	
 	if(READY_LIST != NULL) {
+		u64int old_rsp;
+		__asm__ __volatile__(
+				     "pushq %rax\n\t"
+				     "pushq %rbx\n\t"
+				     "pushq %rcx\n\t"
+				     "pushq %rdx\n\t"
+				     "pushq %rbp\n\t"
+				     "pushq %rsi\n\t"
+				     "pushq %rdi\n\t"
+				     "pushq %r8\n\t"
+				     "pushq %r9\n\t"
+				     "pushq %r10\n\t"
+				     "pushq %r11\n\t"
+				     "pushq %r12\n\t"
+				     "pushq %r13\n\t"
+				     "pushq %r14\n\t"
+				     "pushq %r15\n\t");
+		__asm__ __volatile__("movq %%rsp, %[old_rsp]": [old_rsp] "=r"(old_rsp));
+		ticks++; /* Global variable */
+		
 		if (!scheduler_inited){
 			/* 
 			 * The first time schedule is called, we 
@@ -328,6 +328,10 @@ void schedule_on_timer(void)
 		}
 	} else {
 		/* No item in the READY_LIST, continue running the existing process */
+			__asm__ __volatile__("mov $0x20, %al\n\t"
+					     "out %al, $0x20\n\t"
+					     "out %al, $0xA0\n\t"
+					     "iretq\n\t");		
 	}
 }
 
