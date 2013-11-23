@@ -95,3 +95,5 @@ Elf64_Ehdr* find_elf(char*);
 void parse_load_elf_segments(Elf64_Ehdr*, task_struct*);
 
 task_struct* make_process_from_elf(char*);
+
+void allocate_heap(task_struct*);

@@ -30,25 +30,11 @@ task_struct* make_process_from_elf(char* path)
 	task_struct* new_task = NULL;
 	if(NULL != ehdr){
 		new_task = (task_struct*)kmalloc(sizeof(task_struct));
-		create_user_process(new_task, (u64int)ehdr->e_entry);
+		create_kernel_process(new_task, (u64int)ehdr->e_entry);
 		/* Parse and load the segments */
-       		parse_load_elf_segments(ehdr, new_task);
+       		parse_load_elf_segments(ehdr, new_task);	    
 		/* Give the task some heap memory */
-		vm_struct* heap_vma = (vm_struct*)kmalloc(sizeof(vm_struct));
-		heap_vma->vm_start = 0x5000e8;
-		heap_vma->vm_end = 0x5000e8;
-		kstrcpy(heap_vma->vm_type, "HEAP");
-		heap_vma->vm_next = NULL;
-		/* Attach this vma to the list given in the task_struct */
-		if (new_task->vm_head == NULL){
-			new_task->vm_head = heap_vma;
-		} else {
-			vm_struct* vma_ptr = new_task->vm_head;
-			while(vma_ptr->vm_next != NULL){
-				vma_ptr = vma_ptr->vm_next;
-			}
-			vma_ptr->vm_next = heap_vma;
-		}
+		allocate_heap(new_task);
 	}
 	return new_task;
 }
@@ -123,11 +109,11 @@ void load_elf_segment(Elf64_Ehdr* elf64_ehdr_ptr, Elf64_Phdr* elf64_phdr_ptr, ta
 	proc_vma->vm_start = elf64_phdr_ptr->p_vaddr;
 	proc_vma->vm_end = elf64_phdr_ptr->p_vaddr + elf64_phdr_ptr->p_memsz;
 	if (elf64_phdr_ptr->p_flags == 0x06) {
-		kstrcpy(proc_vma->vm_type, "DATA");
+		proc_vma->vm_type = DATA_VMA;
 	} else if (elf64_phdr_ptr->p_flags == 0x05) {
-		kstrcpy(proc_vma->vm_type, "CODE");
+		proc_vma->vm_type = CODE_VMA;
 	} else {
-		kstrcpy(proc_vma->vm_type, "OTHR");
+		proc_vma->vm_type = OTHER_VMA;
 	}
 	proc_vma->vm_next = NULL;
 	/* Attach this vma to the list */
@@ -139,5 +125,24 @@ void load_elf_segment(Elf64_Ehdr* elf64_ehdr_ptr, Elf64_Phdr* elf64_phdr_ptr, ta
 			vma_ptr = vma_ptr->vm_next;
 		}
 		vma_ptr->vm_next = proc_vma;
+	}
+}
+
+void allocate_heap(task_struct* task_ptr)
+{
+	vm_struct* heap_vma = (vm_struct*)kmalloc(sizeof(vm_struct));
+	heap_vma->vm_start = 0x5000e8;
+	heap_vma->vm_end = 0x5000e8;
+	heap_vma->vm_type = HEAP_VMA;
+	heap_vma->vm_next = NULL;
+	/* Attach this vma to the list given in the task_struct */
+	if (task_ptr->vm_head == NULL){
+		task_ptr->vm_head = heap_vma;
+	} else {
+		vm_struct* vma_ptr = task_ptr->vm_head;
+		while(vma_ptr->vm_next != NULL){
+			vma_ptr = vma_ptr->vm_next;
+		}
+		vma_ptr->vm_next = heap_vma;
 	}
 }

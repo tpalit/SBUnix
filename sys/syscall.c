@@ -40,7 +40,7 @@ int do_malloc(u32int mem_size)
 	 */
 	vm_struct* vma_ptr = CURRENT_TASK->vm_head;
         while (vma_ptr != NULL){
-		if (kstrcmp(vma_ptr->vm_type, "HEAP")){
+		if(vma_ptr->vm_type == HEAP_VMA){
 			break;
 		}
 		vma_ptr = vma_ptr->vm_next;

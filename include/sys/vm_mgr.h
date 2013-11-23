@@ -73,8 +73,14 @@ struct phys_vir_addr
 
 typedef struct phys_vir_addr phys_vir_addr;
 
+#define CODE_VMA 0
+#define DATA_VMA 1
+#define HEAP_VMA 2
+#define STACK_VMA 3
+#define OTHER_VMA 127
+
 struct vm_struct{
-	char vm_type[10];  /* The type of the vma - CODE, DATA, HEAP */
+	u8int vm_type;  /* The type of the vma - CODE, DATA, HEAP */
 	u64int vm_start;      /* VMA start, inclusive */
 	u64int vm_end;        /* VMA end , exclusive */
 	struct vm_struct *vm_next;      /* list of VMA's */
