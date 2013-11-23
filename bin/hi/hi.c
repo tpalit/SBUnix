@@ -13,6 +13,5 @@ int main(void)
 		}
 	}
 	printf("Done hi.c");
-	while(1);
 	return 0;
 }

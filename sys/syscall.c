@@ -34,10 +34,6 @@ int do_read(char* s)
 int do_malloc(u32int mem_size)
 {
 	u64int ret_ptr;
-	/* The task that was scheduled last is requesting memory. 
-	 * @TODO - Check if this is assumption right.
-	 * Need to expand its heap. 
-	 */
 	vm_struct* vma_ptr = CURRENT_TASK->vm_head;
         while (vma_ptr != NULL){
 		if(vma_ptr->vm_type == HEAP_VMA){
@@ -53,17 +49,39 @@ int do_malloc(u32int mem_size)
 	return ret_ptr;
 }
 
+void do_exit(void)
+{
+	exit();
+}
+
 /* Set up the system call table*/
 void* syscalls_tbl[SYSCALL_NR] = 
 	{
 		do_write,
 		do_read, 
-		do_malloc
+		do_malloc,
+		do_exit
 	};
 
 /* The handler for the int 80h */
 void syscall_handler(void)
 {
+	__asm__ __volatile__(
+			     "pushq %rax\n\t"
+			     "pushq %rbx\n\t"
+			     "pushq %rcx\n\t"
+			     "pushq %rdx\n\t"
+			     "pushq %rbp\n\t"
+			     "pushq %rsi\n\t"
+			     "pushq %rdi\n\t"
+			     "pushq %r8\n\t"
+			     "pushq %r9\n\t"
+			     "pushq %r10\n\t"
+			     "pushq %r11\n\t"
+			     "pushq %r12\n\t"
+			     "pushq %r13\n\t"
+			     "pushq %r14\n\t"
+			     "pushq %r15\n\t");
 	u64int rax;
 	__asm__ __volatile__ ("movq %%rax, %0":"=r"(rax));
 	if (rax >= SYSCALL_NR)
@@ -71,6 +89,22 @@ void syscall_handler(void)
 	void *location = syscalls_tbl[rax];
 	u64int ret;
 	__asm__ __volatile__ ("callq *%0\n\t  " : "=a" (ret) :  "r" (location));
+	__asm__ __volatile__("popq %r15\n\t"
+			     "popq %r14\n\t"
+			     "popq %r13\n\t"
+			     "popq %r12\n\t"
+			     "popq %r11\n\t"
+			     "popq %r10\n\t"
+			     "popq %r9\n\t"
+			     "popq %r8\n\t"
+			     "popq %rdi\n\t"
+			     "popq %rsi\n\t"
+			     "popq %rbp\n\t"
+			     "popq %rdx\n\t"
+			     "popq %rcx\n\t"
+			     "popq %rbx\n\t"
+			     "popq %rax\n\t"
+);
 	__asm__ ("iretq\n\t");
 }
 

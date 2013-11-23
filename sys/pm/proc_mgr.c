@@ -16,7 +16,7 @@ task_struct* ZOMBIE_LIST = NULL;
 task_struct* CURRENT_TASK = NULL;
 task_struct* prev = NULL;
 task_struct* next = NULL;
-
+u8int current_exiting = 0;
 u32int PROC_ID_TOP = 0;
 
 extern pml4_e pml_entries[512];
@@ -26,15 +26,7 @@ extern tss_struct tss_entry; /* The tss_entry.rsp0 has to be updated after each 
 
 /* Whether the scheduler has been inited */
 u8int scheduler_inited = 0;
-void __switch_to()
-{
-	/*
-	task_struct* temp = NULL;
-	temp = prev;
-	prev = next;
-	next = temp;
-	*/
-}
+
 
 /**
  * Adds a task_struct to the ready list. 
@@ -54,27 +46,157 @@ void add_to_ready_list(task_struct* task_struct_ptr)
 	}
 }
 
+/**
+ * Removes the task from the ready list.
+ */
+void remove_from_ready_list(task_struct* task_struct_ptr)
+{
+	task_struct* curr_task = task_struct_ptr;
+	task_struct* ready_list_ptr = READY_LIST;
+	task_struct* prev_ptr = NULL;
+	// Find the task in the list and remove it.
+	if (ready_list_ptr != NULL){
+		if(curr_task == ready_list_ptr) {
+			if (prev_ptr != NULL){
+				prev_ptr->next = curr_task->next;
+			}
+			curr_task->next = NULL;
+		}
+		prev_ptr = ready_list_ptr;
+		ready_list_ptr = ready_list_ptr->next;
+	} else {
+		panic("READY_LIST is empty! This should never, ever happen!");
+	}
+}
+
+void add_to_zombie_list(task_struct* task_struct_ptr)
+{
+	task_struct* zombie_list_ptr = ZOMBIE_LIST;
+	// The new process should be added at the end, so it's next should be NULL.
+	task_struct_ptr->next = NULL;
+	if(zombie_list_ptr == NULL){
+		ZOMBIE_LIST = task_struct_ptr;
+	} else {
+		while(zombie_list_ptr->next != NULL) {
+			zombie_list_ptr = zombie_list_ptr->next;
+		}
+		zombie_list_ptr->next = task_struct_ptr;
+	}	
+}
+
+
+/**
+ * Cooperative multitasking's schedule. 
+ * Identical to the timer code, except that it doesn't acknowledge interrupts and
+ * that it handles the schedule() after the exit() and has to deal with weird cases.
+ * If we had used the generic interrupt framework, we wouldn't have had to do this.
+ */
 void schedule()
 {
-	/*
-	if (!scheduler_inited){
-	
-		if (READY_LIST == NULL) {
-			return;
+	u64int old_rsp;
+	__asm__ __volatile__(
+			     "pushq %rax\n\t"
+			     "pushq %rbx\n\t"
+			     "pushq %rcx\n\t"
+			     "pushq %rdx\n\t"
+			     "pushq %rbp\n\t"
+			     "pushq %rsi\n\t"
+			     "pushq %rdi\n\t"
+     			     "pushq %r8\n\t"
+			     "pushq %r9\n\t"
+			     "pushq %r10\n\t"
+			     "pushq %r11\n\t"
+			     "pushq %r12\n\t"
+			     "pushq %r13\n\t"
+			     "pushq %r14\n\t"
+			     "pushq %r15\n\t");
+
+	__asm__ __volatile__("movq %%rsp, %[old_rsp]": [old_rsp] "=r"(old_rsp));
+	ticks++; /* Global variable */
+	if(READY_LIST != NULL) {
+		if (!scheduler_inited){
+			/* 
+			 * The first time schedule is called, we 
+			 * just load the kernel stack and do a iretq
+			 * since the switching mechanism wasn't in effect earlier.
+			 * And the other pushes aren't on the register yet. 
+			 */
+			if (READY_LIST == NULL) {
+				return;
+			}
+			prev = READY_LIST;
+			READY_LIST = READY_LIST->next;
+			CURRENT_TASK = prev;
+			scheduler_inited = 1;
+			__asm__ __volatile__(
+					     "movq %[prev_rsp], %%rsp\n\t"
+					     :
+					     :[prev_rsp] "m" (prev->rsp_register));
+			__asm__ __volatile__(
+					     "movq %0, %%cr3\n\t"
+					     ::"r"(prev->cr3_register));
+			tss_entry.rsp0 = (u64int)&prev->kernel_stack[KERNEL_STACK_SIZE-1];
+			__asm__ __volatile__("popq %r15\n\t"
+					     "popq %r14\n\t"
+					     "popq %r13\n\t"
+					     "popq %r12\n\t"
+					     "popq %r11\n\t"
+					     "popq %r10\n\t"
+					     "popq %r9\n\t"
+					     "popq %r8\n\t"
+					     "popq %rdi\n\t"
+					     "popq %rsi\n\t"
+					     "popq %rbp\n\t"
+					     "popq %rdx\n\t"
+					     "popq %rcx\n\t"
+					     "popq %rbx\n\t"
+					     "popq %rax\n\t");
+			__asm__ __volatile__("iretq\n\t");
+		} else {
+			prev = CURRENT_TASK;
+			next = READY_LIST;
+			__asm__ __volatile__(
+					     "movq %[old_rsp], %[prev_rsp]\n\t"
+					     "movq %[next_rsp], %%rsp\n\t"
+					     :[prev_rsp] "=m" (prev->rsp_register)
+					     :[old_rsp] "r" (old_rsp),
+					     [next_rsp] "m" (next->rsp_register));
+			CURRENT_TASK = READY_LIST;
+			/* Add prev to the end of the READY_LIST, unless this is exiting */
+			if (!current_exiting) {
+				add_to_ready_list(prev);
+				current_exiting = 0;
+				prev = NULL;
+			} else {
+				/* If removing prev makes this the last entry, then add it back */
+				if (READY_LIST->next == NULL){
+					add_to_ready_list(next);
+				}
+			}
+			READY_LIST = READY_LIST->next;
+			__asm__ __volatile__(
+					     "movq %0, %%cr3\n\t"
+					     ::"r"(next->cr3_register));			
+			tss_entry.rsp0 = (u64int)&next->kernel_stack[KERNEL_STACK_SIZE-1];
+			__asm__ __volatile__(
+					     "popq %r15\n\t"
+					     "popq %r14\n\t"
+					     "popq %r13\n\t"
+					     "popq %r12\n\t"
+					     "popq %r11\n\t"
+					     "popq %r10\n\t"
+					     "popq %r9\n\t"
+					     "popq %r8\n\t"
+					     "popq %rdi\n\t"
+					     "popq %rsi\n\t"
+					     "popq %rbp\n\t"
+					     "popq %rdx\n\t"
+					     "popq %rcx\n\t"
+					     "popq %rbx\n\t"
+					     "popq %rax\n\t");
+			__asm__ __volatile__("iretq\n\t");
 		}
-	        prev = READY_LIST;
-		READY_LIST = READY_LIST->next;
-		CURRENT_TASK = prev;
-		init_schedule();
-	} else {
-		prev = CURRENT_TASK;
-		CURRENT_TASK = READY_LIST;
-	        next = READY_LIST;
-	
-		add_to_ready_list(prev);
-		READY_LIST = READY_LIST->next;
-		switch_to(prev,next);
-	}*/
+	} 
 }
 
 /*
@@ -108,9 +230,18 @@ void schedule_on_timer(void)
 			     "pushq %rdx\n\t"
 			     "pushq %rbp\n\t"
 			     "pushq %rsi\n\t"
-			     "pushq %rdi\n\t");
+			     "pushq %rdi\n\t"
+			     "pushq %r8\n\t"
+			     "pushq %r9\n\t"
+			     "pushq %r10\n\t"
+			     "pushq %r11\n\t"
+			     "pushq %r12\n\t"
+			     "pushq %r13\n\t"
+			     "pushq %r14\n\t"
+			     "pushq %r15\n\t");
 	__asm__ __volatile__("movq %%rsp, %[old_rsp]": [old_rsp] "=r"(old_rsp));
 	ticks++; /* Global variable */
+	
 	if(READY_LIST != NULL) {
 		if (!scheduler_inited){
 			/* 
@@ -124,6 +255,7 @@ void schedule_on_timer(void)
 			}
 			prev = READY_LIST;
 			READY_LIST = READY_LIST->next;
+
 			CURRENT_TASK = prev;
 			scheduler_inited = 1;
 			__asm__ __volatile__(
@@ -134,7 +266,16 @@ void schedule_on_timer(void)
 					     "movq %0, %%cr3\n\t"
 					     ::"r"(prev->cr3_register));
 			tss_entry.rsp0 = (u64int)&prev->kernel_stack[KERNEL_STACK_SIZE-1];
-			__asm__ __volatile__("popq %rdi\n\t"
+			__asm__ __volatile__(
+					     "popq %r15\n\t"
+					     "popq %r14\n\t"
+					     "popq %r13\n\t"
+					     "popq %r12\n\t"
+					     "popq %r11\n\t"
+					     "popq %r10\n\t"
+					     "popq %r9\n\t"
+					     "popq %r8\n\t"
+					     "popq %rdi\n\t"
 					     "popq %rsi\n\t"
 					     "popq %rbp\n\t"
 					     "popq %rdx\n\t"
@@ -155,14 +296,25 @@ void schedule_on_timer(void)
 					     :[old_rsp] "r" (old_rsp),
 					     [next_rsp] "m" (next->rsp_register));
 			CURRENT_TASK = READY_LIST;
-			/* Add prev to the end of the READY_LIST */
 			add_to_ready_list(prev);
-			READY_LIST = READY_LIST->next;
+			if(READY_LIST->next != NULL) {
+				READY_LIST = READY_LIST->next;
+			
+			}
 			__asm__ __volatile__(
 					     "movq %0, %%cr3\n\t"
 					     ::"r"(next->cr3_register));			
 			tss_entry.rsp0 = (u64int)&next->kernel_stack[KERNEL_STACK_SIZE-1];
-			__asm__ __volatile__("popq %rdi\n\t"
+			__asm__ __volatile__(
+					     "popq %r15\n\t"
+					     "popq %r14\n\t"
+					     "popq %r13\n\t"
+					     "popq %r12\n\t"
+					     "popq %r11\n\t"
+					     "popq %r10\n\t"
+					     "popq %r9\n\t"
+					     "popq %r8\n\t"
+					     "popq %rdi\n\t"
 					     "popq %rsi\n\t"
 					     "popq %rbp\n\t"
 					     "popq %rdx\n\t"
@@ -174,7 +326,20 @@ void schedule_on_timer(void)
 					     "out %al, $0xA0\n\t"
 					     "iretq\n\t");
 		}
-	} 
+	} else {
+		/* No item in the READY_LIST, continue running the existing process */
+	}
+}
+
+/**
+ * Mark the current task as exiting and put it in the ZOMBIE list.
+ * It will then invoke schedule() to schedule another process.
+ */
+void exit(void)
+{
+	current_exiting = 1;
+	add_to_zombie_list(CURRENT_TASK);
+	schedule();
 }
 
 /**
@@ -192,10 +357,10 @@ void create_kernel_process(task_struct* task_struct_ptr, u64int function_ptr)
 
 	/* Pretend that the GP registers and one function call is also on the stack */
 	int indx = 122;
-	for (; indx>116; indx--) {
+	for (; indx>108; indx--) {
 		task_struct_ptr->kernel_stack[indx] = 0x0;
 	}
-	task_struct_ptr->rsp_register = (u64int)&task_struct_ptr->kernel_stack[116];
+	task_struct_ptr->rsp_register = (u64int)&task_struct_ptr->kernel_stack[108];
 
 	task_struct_ptr->rip_register = function_ptr;
 	task_struct_ptr->rflags = 0x20202;
@@ -239,10 +404,10 @@ void create_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 
 	/* Pretend that the GP registers and one function call is also on the stack */
 	int indx = 122;
-	for (; indx>116; indx--) {
+	for (; indx>108; indx--) {
 		task_struct_ptr->kernel_stack[indx] = 0x0;
 	}
-	task_struct_ptr->rsp_register = (u64int)&task_struct_ptr->kernel_stack[116];
+	task_struct_ptr->rsp_register = (u64int)&task_struct_ptr->kernel_stack[108];
 	task_struct_ptr->rip_register = function_ptr;
 	task_struct_ptr->rflags = 0x20202;
 	task_struct_ptr->next = NULL;

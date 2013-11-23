@@ -35,15 +35,18 @@ struct task_struct
 
 typedef struct task_struct task_struct;
 
-void schedule();
+void add_to_ready_list(task_struct* );
+void remove_from_ready_list(task_struct* );
+void add_to_zombie_list(task_struct* );
 
-void __switch_to();
 
-/* The first schedule */
-void init_schedule();
+void schedule(void);
+void schedule_on_timer(void);
+void exit(void);
 
 void create_kernel_process(task_struct*, u64int);
 void create_user_process(task_struct*, u64int);
+
 /*
  * The previous and next task structs.
  * The previous will be pushed on to the stack so that it's reference can be found

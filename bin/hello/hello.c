@@ -22,7 +22,6 @@ int main(int argc, char* argv[], char* envp[])
 		}
 	}
 	printf("Done hello.c");
-	while(1);
 	return 0;
 	
 }
