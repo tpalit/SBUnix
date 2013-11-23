@@ -42,7 +42,6 @@ void add_to_ready_list(task_struct* );
 void remove_from_ready_list(task_struct* );
 void add_to_zombie_list(task_struct* );
 
-u8int is_reschedule_needed(void);
 void schedule(void);
 void schedule_on_timer(void);
 void exit(void);

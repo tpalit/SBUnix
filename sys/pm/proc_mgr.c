@@ -346,21 +346,6 @@ void schedule_on_timer(void)
 	}
 }
 
-
-/**
- * Check if the current processes's time slice expires.
- */
-u8int is_reschedule_needed() {
-	if (!scheduler_inited) {
-		return 1;
-	}
-	if (READY_LIST != NULL && CURRENT_TASK->time_slices <= 0) {
-		return 1;
-	} else {
-		return 0;
-	}
-}
-
 /**
  * Mark the current task as exiting and put it in the ZOMBIE list.
  * It will then invoke schedule() to schedule another process.
