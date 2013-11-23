@@ -95,14 +95,30 @@ void schedule()
  *
  * @TODO - Code is in extended assembly, which is probably a bad idea.
  * Converting to pure assembly is a better idea as suggested by Yongming. 
+ * @TODO - The handling for timer interrupt doesn't go through the typical
+ * common handler routines. Doing that shouldn't be very tough. 
  */
 void schedule_on_timer(void)
 {
 	u64int old_rsp;
+	__asm__ __volatile__(
+			     "pushq %rax\n\t"
+			     "pushq %rbx\n\t"
+			     "pushq %rcx\n\t"
+			     "pushq %rdx\n\t"
+			     "pushq %rbp\n\t"
+			     "pushq %rsi\n\t"
+			     "pushq %rdi\n\t");
 	__asm__ __volatile__("movq %%rsp, %[old_rsp]": [old_rsp] "=r"(old_rsp));
 	ticks++; /* Global variable */
 	if(READY_LIST != NULL) {
 		if (!scheduler_inited){
+			/* 
+			 * The first time schedule is called, we 
+			 * just load the kernel stack and do a iretq
+			 * since the switching mechanism wasn't in effect earlier.
+			 * And the other pushes aren't on the register yet. 
+			 */
 			if (READY_LIST == NULL) {
 				return;
 			}
@@ -118,6 +134,13 @@ void schedule_on_timer(void)
 					     "movq %0, %%cr3\n\t"
 					     ::"r"(prev->cr3_register));
 			tss_entry.rsp0 = (u64int)&prev->kernel_stack[KERNEL_STACK_SIZE-1];
+			__asm__ __volatile__("popq %rdi\n\t"
+					     "popq %rsi\n\t"
+					     "popq %rbp\n\t"
+					     "popq %rdx\n\t"
+					     "popq %rcx\n\t"
+					     "popq %rbx\n\t"
+					     "popq %rax\n\t");
 			__asm__ __volatile__("mov $0x20, %al\n\t"
 					     "out %al, $0x20\n\t"
 					     "out %al, $0xA0\n\t"
@@ -139,22 +162,19 @@ void schedule_on_timer(void)
 					     "movq %0, %%cr3\n\t"
 					     ::"r"(next->cr3_register));			
 			tss_entry.rsp0 = (u64int)&next->kernel_stack[KERNEL_STACK_SIZE-1];
+			__asm__ __volatile__("popq %rdi\n\t"
+					     "popq %rsi\n\t"
+					     "popq %rbp\n\t"
+					     "popq %rdx\n\t"
+					     "popq %rcx\n\t"
+					     "popq %rbx\n\t"
+					     "popq %rax\n\t");
 			__asm__ __volatile__("mov $0x20, %al\n\t"
 					     "out %al, $0x20\n\t"
 					     "out %al, $0xA0\n\t"
 					     "iretq\n\t");
 		}
-	} else {
-		/* 
-		 * Code should never reach here, as READY_LIST should never be null. 
-		 * We'll always have an idle kernel process.
-		 */
-		__asm__ __volatile("mov $0x20, %al\n\t"
-				   "out %al, $0x20\n\t"
-				   "out %al, $0xA0\n\t"
-				   "iretq\n\t");
-	}
-
+	} 
 }
 
 /**
@@ -170,7 +190,13 @@ void create_kernel_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->kernel_stack[124] = 0x08;
 	task_struct_ptr->kernel_stack[123] = function_ptr;
 
-	task_struct_ptr->rsp_register = (u64int)&task_struct_ptr->kernel_stack[123];
+	/* Pretend that the GP registers and one function call is also on the stack */
+	int indx = 122;
+	for (; indx>116; indx--) {
+		task_struct_ptr->kernel_stack[indx] = 0x0;
+	}
+	task_struct_ptr->rsp_register = (u64int)&task_struct_ptr->kernel_stack[116];
+
 	task_struct_ptr->rip_register = function_ptr;
 	task_struct_ptr->rflags = 0x20202;
 	task_struct_ptr->next = NULL;
@@ -211,7 +237,12 @@ void create_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->kernel_stack[124] = 0x1b;
 	task_struct_ptr->kernel_stack[123] = function_ptr;
 
-	task_struct_ptr->rsp_register = (u64int)&task_struct_ptr->kernel_stack[123];
+	/* Pretend that the GP registers and one function call is also on the stack */
+	int indx = 122;
+	for (; indx>116; indx--) {
+		task_struct_ptr->kernel_stack[indx] = 0x0;
+	}
+	task_struct_ptr->rsp_register = (u64int)&task_struct_ptr->kernel_stack[116];
 	task_struct_ptr->rip_register = function_ptr;
 	task_struct_ptr->rflags = 0x20202;
 	task_struct_ptr->next = NULL;

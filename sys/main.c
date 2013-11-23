@@ -32,6 +32,8 @@ extern void initialize_gdt();
 extern void initialize_idt();
 extern void initialize_tss();
 
+extern void start_idle_process();
+
 extern void switch_to_user_mode(void);
 
 /* These should NOT be used directly outside of the first initialization*/
@@ -74,6 +76,7 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 	__asm__ __volatile__("movq %0, %%rbp" : :"a"(&stack[0]));
 	__asm__ __volatile__("movq %0, %%rsp" : :"a"(&stack[INITIAL_STACK_SIZE]));
        	initialize_tss();
+	start_idle_process();
 	make_process_from_elf("bin/hi");
       	make_process_from_elf("bin/hello");
 	make_process_from_elf("bin/test");

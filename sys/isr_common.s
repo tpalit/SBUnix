@@ -195,7 +195,7 @@ _isr_handler_head_32:
 	# No need to push the segment
 	# registers since we're in long mode.
 	
-#	callq isr_handler_body_32
+	callq schedule_on_timer
 
 	# Pop stuff back
 	
@@ -214,7 +214,6 @@ _isr_handler_head_32:
 	out %al, $0x20
 	out %al, $0xA0
 
-	callq schedule
 	# Turn interrupts back on
 	sti
 

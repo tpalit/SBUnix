@@ -163,7 +163,7 @@ void allocate_stack(task_struct* task_ptr)
 	u64int old_cr3 = 0L;
 	vm_struct* stack_vma = (vm_struct*)kmalloc(sizeof(vm_struct));
 	stack_vma->vm_start = 0xA00000;
-	stack_vma->vm_end = stack_vma->vm_start+PAGE_SIZE-1;
+	stack_vma->vm_end = stack_vma->vm_start+PAGE_SIZE-8;
 	stack_vma->vm_type = STACK_VMA;
 	stack_vma->vm_next = NULL;
 	/* Switch address space*/

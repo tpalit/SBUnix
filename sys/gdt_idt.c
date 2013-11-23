@@ -27,6 +27,7 @@ extern void _isr_handler_head_0(void); /* Divide by zero */
 extern void isr_handler_body_10(void); /* TSS */
 extern void _isr_handler_head_13(void); /* GP */
 extern void _isr_handler_head_14(void); /* PF */
+extern void _isr_handler_head_32(void); /* Timer */
 extern void schedule_on_timer(void); /* Timer */
 extern void _isr_handler_head_33(void); /* Keyboard */
 
