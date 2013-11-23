@@ -159,7 +159,7 @@ void schedule_on_timer(void)
 
 /**
  * Sets up the kernel process. This includes, setting up the kernel to 
- * something that the timer_interrupt expects.
+ * something that the timer_interrupt expects - rip, cs, rflags, rsp and ss. 
  */
 void create_kernel_process(task_struct* task_struct_ptr, u64int function_ptr)
 {

@@ -76,7 +76,7 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
        	initialize_tss();
 	make_process_from_elf("bin/hi");
       	make_process_from_elf("bin/hello");
-	//	make_process_from_elf("bin/hello");
+	make_process_from_elf("bin/test");
 	__asm__("sti\n\t");
 	while(1);
 }

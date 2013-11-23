@@ -30,11 +30,13 @@ task_struct* make_process_from_elf(char* path)
 	task_struct* new_task = NULL;
 	if(NULL != ehdr){
 		new_task = (task_struct*)kmalloc(sizeof(task_struct));
-		create_kernel_process(new_task, (u64int)ehdr->e_entry);
+		create_user_process(new_task, (u64int)ehdr->e_entry);
 		/* Parse and load the segments */
        		parse_load_elf_segments(ehdr, new_task);	    
 		/* Give the task some heap memory */
 		allocate_heap(new_task);
+		/* Give the task some stack memory */
+		allocate_stack(new_task);
 	}
 	return new_task;
 }
@@ -128,11 +130,15 @@ void load_elf_segment(Elf64_Ehdr* elf64_ehdr_ptr, Elf64_Phdr* elf64_phdr_ptr, ta
 	}
 }
 
+/**
+ * Give the process a zero size heap so that we can quickly test that malloc
+ * is working. 
+ */
 void allocate_heap(task_struct* task_ptr)
 {
 	vm_struct* heap_vma = (vm_struct*)kmalloc(sizeof(vm_struct));
-	heap_vma->vm_start = 0x5000e8;
-	heap_vma->vm_end = 0x5000e8;
+	heap_vma->vm_start = 0x500000;
+	heap_vma->vm_end = 0x500000;
 	heap_vma->vm_type = HEAP_VMA;
 	heap_vma->vm_next = NULL;
 	/* Attach this vma to the list given in the task_struct */
@@ -145,4 +151,46 @@ void allocate_heap(task_struct* task_ptr)
 		}
 		vma_ptr->vm_next = heap_vma;
 	}
+}
+
+/** 
+ * Give the process a one page stack and map it into the process's
+ * address space.
+ * This stack will be autogrowing. 
+ */
+void allocate_stack(task_struct* task_ptr)
+{
+	u64int old_cr3 = 0L;
+	vm_struct* stack_vma = (vm_struct*)kmalloc(sizeof(vm_struct));
+	stack_vma->vm_start = 0xA00000;
+	stack_vma->vm_end = stack_vma->vm_start+PAGE_SIZE-1;
+	stack_vma->vm_type = STACK_VMA;
+	stack_vma->vm_next = NULL;
+	/* Switch address space*/
+	__asm__ __volatile__(
+			     "movq %%cr3, %0\n\t"
+			     :"=r"(old_cr3));
+	__asm__ __volatile__(
+			     "movq %0, %%cr3\n\t"
+			     ::"r"(task_ptr->cr3_register));
+	kmmap((void*)stack_vma->vm_start, PAGE_SIZE, 0, 0, 0, 0);
+	/* Load back the old cr3 */
+	__asm__ __volatile__(
+			     "movq %0, %%cr3\n\t"
+			     ::"r"(old_cr3));	
+	/* Attach this vma to the list given in the task_struct */
+	if (task_ptr->vm_head == NULL){
+		task_ptr->vm_head = stack_vma;
+	} else {
+		vm_struct* vma_ptr = task_ptr->vm_head;
+		while(vma_ptr->vm_next != NULL){
+			vma_ptr = vma_ptr->vm_next;
+		}
+		vma_ptr->vm_next = stack_vma;
+	}
+	/*
+	 * Set up the initial kernel stack so that this stack is loaded into rsp.
+	 * IRETQ pops in order rip, cs, rflags, rsp and ss. 
+	 */
+	task_ptr->kernel_stack[126] = stack_vma->vm_end;
 }
