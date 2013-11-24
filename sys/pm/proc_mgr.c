@@ -1,4 +1,3 @@
-
 /* 
  * The process manager. 
  */
@@ -16,7 +15,11 @@ task_struct* ZOMBIE_LIST = NULL;
 task_struct* CURRENT_TASK = NULL;
 task_struct* prev = NULL;
 task_struct* next = NULL;
+
+/* Flag to communicate if the current task did a exit() call */
 u8int current_inactive = 0;
+
+/* Global variable for allotting process ids. */
 u32int PROC_ID_TOP = 0;
 
 extern pml4_e pml_entries[512];
@@ -34,9 +37,10 @@ u8int scheduler_inited = 0;
 void add_to_ready_list(task_struct* task_struct_ptr)
 {
 	task_struct* ready_list_ptr = READY_LIST;
-	/* 
+	/*
 	 * First check if the process is already there. 
-	 * Does this look like a hack? Yes it is!
+	 * @HACK - ideally, the code shouldn't try to add a process twice.
+	 * but it is happening!
 	 */
 	while(ready_list_ptr != NULL) {
 		if (task_struct_ptr == ready_list_ptr) {
@@ -65,7 +69,7 @@ void remove_from_ready_list(task_struct* task_struct_ptr)
 	task_struct* curr_task = task_struct_ptr;
 	task_struct* ready_list_ptr = READY_LIST;
 	task_struct* prev_ptr = NULL;
-	// Find the task in the list and remove it.
+	/* Find the task in the list and remove it. */
 	if (ready_list_ptr != NULL){
 		if(curr_task == ready_list_ptr) {
 			if (prev_ptr != NULL){
@@ -80,10 +84,13 @@ void remove_from_ready_list(task_struct* task_struct_ptr)
 	}
 }
 
+/**
+ * The process added to the zombie list. 
+ */
 void add_to_zombie_list(task_struct* task_struct_ptr)
 {
 	task_struct* zombie_list_ptr = ZOMBIE_LIST;
-	// The new process should be added at the end, so it's next should be NULL.
+	/* The new process should be added at the end, so it's next should be NULL. */
 	task_struct_ptr->next = NULL;
 	if(zombie_list_ptr == NULL){
 		ZOMBIE_LIST = task_struct_ptr;
@@ -95,6 +102,76 @@ void add_to_zombie_list(task_struct* task_struct_ptr)
 	}	
 }
 
+/**
+ * Add to the sleeping list. 
+ */
+void add_to_sleeping_list(task_struct* task_struct_ptr, event_struct* event_ptr)
+{
+	task_struct* sleeping_list_ptr = SLEEPING_LIST;
+	/* The new process should be added at the end, so it's next should be NULL. */
+	task_struct_ptr->next = NULL;
+	if(sleeping_list_ptr == NULL){
+		SLEEPING_LIST = task_struct_ptr;
+	} else {
+		while(sleeping_list_ptr->next != NULL) {
+			sleeping_list_ptr = sleeping_list_ptr->next;
+		}
+		sleeping_list_ptr->next = task_struct_ptr;
+	}	
+	if (event_ptr != NULL){
+		task_struct_ptr->waiting_on = event_ptr;
+	}
+}
+
+/**
+ * Remove a task from the sleeping list. 
+ */
+void remove_from_sleeping_list(task_struct* task_struct_ptr)
+{
+	task_struct* sleeping_list_ptr = SLEEPING_LIST;
+	task_struct* prev_ptr = NULL;
+	// Find the task in the list and remove it.
+	if (sleeping_list_ptr != NULL){
+		if(task_struct_ptr  == sleeping_list_ptr) {
+			if (prev_ptr != NULL){
+				prev_ptr->next = task_struct_ptr->next;
+			}
+			task_struct_ptr->next = NULL;
+		}
+		prev_ptr = sleeping_list_ptr;
+		sleeping_list_ptr = sleeping_list_ptr->next;
+	} 
+}
+
+/**
+ * On every tick, go through the sleeping list, to see if any 
+ * sleeping process should be woken up. 
+ * This should be invoked from schedule_on_timer() only and 
+ * not from schedule().
+ */
+#define mprocess_sleeping_list_on_tick()\
+{\
+	task_struct* sleeping_list_ptr = SLEEPING_LIST;\
+	task_struct* prev_ptr = NULL;\
+	if(sleeping_list_ptr != NULL){\
+		while(sleeping_list_ptr->next != NULL) {\
+			if (sleeping_list_ptr->wait_time_slices > 0){\
+				sleeping_list_ptr->wait_time_slices--;\
+				if (sleeping_list_ptr->wait_time_slices <=0){\
+					sleeping_list_ptr->wait_time_slices = 0;\
+					if (prev_ptr != NULL){\
+						prev_ptr->next = sleeping_list_ptr->next;\
+					} else {\
+						SLEEPING_LIST = NULL;\
+					}\
+					madd_to_ready_list(sleeping_list_ptr)\
+				}\
+			}\
+			prev_ptr = sleeping_list_ptr;\
+			sleeping_list_ptr = sleeping_list_ptr->next;\
+		}\
+	}\
+}
 
 /**
  * Cooperative multitasking's schedule. 
@@ -233,8 +310,16 @@ void schedule()
  */
 void schedule_on_timer(void)
 {
+	/**
+	 * @HACK @TODO - Calling a function pushes %rbx on to the stack which 
+	 * corrupts everything. So, no function call, till old_rsp is read.
+	 * We'll read once at the start of the function and once after pushing 
+	 * the registers
+	 */
+	mprocess_sleeping_list_on_tick()
+	u64int old_rsp;
 	if (!scheduler_inited || (READY_LIST != NULL && CURRENT_TASK->time_slices <= 0)) {
-		u64int old_rsp;
+
 		__asm__ __volatile__(
 				     "pushq %rax\n\t"
 				     "pushq %rbx\n\t"
@@ -252,6 +337,7 @@ void schedule_on_timer(void)
 				     "pushq %r14\n\t"
 				     "pushq %r15\n\t");
 		__asm__ __volatile__("movq %%rsp, %[old_rsp]": [old_rsp] "=r"(old_rsp));
+
 		ticks++; /* Global variable */
 		if (!scheduler_inited){
 			/* 
@@ -358,7 +444,7 @@ void schedule_on_timer(void)
  */
 void exit(void)
 {
-	current_inactive = 1;
+	current_inactive = 1; /* Don't add CURRENT_TASK back to READY_LIST in schedule() */
 	add_to_zombie_list(CURRENT_TASK);
 	schedule();
 }
@@ -367,9 +453,12 @@ void exit(void)
  * Mark the current task as inactive and put it in the SLEEPING list.
  * It will then invoke schedule() to schedule another process.
  */
-void sleep(void)
+void sleep(u32int sleep_slices)
 {
-	
+	current_inactive = 1;
+	CURRENT_TASK->wait_time_slices = sleep_slices;
+	add_to_sleeping_list(CURRENT_TASK, NULL);
+	schedule();
 }
 
 /**
@@ -399,6 +488,9 @@ void create_kernel_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->last_run = NULL;
 	task_struct_ptr->proc_id = PROC_ID_TOP++;
 	task_struct_ptr->vm_head = NULL;
+	task_struct_ptr->waiting_on = NULL;
+	task_struct_ptr->wait_time_slices = 0;
+
 	/* Set up the process address space */
 	/* This has to be aligned on 0x1000 boundaries and need the physical address */
 	phys_vir_addr* page_addr = get_free_phys_page();
@@ -446,6 +538,8 @@ void create_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->last_run = NULL;
 	task_struct_ptr->proc_id = PROC_ID_TOP++;
 	task_struct_ptr->vm_head = NULL;
+	task_struct_ptr->waiting_on = NULL;
+	task_struct_ptr->wait_time_slices = 0;
 	/* Set up the process address space */
 	/* This has to be aligned on 0x1000 boundaries and need the physical address */
 	phys_vir_addr* page_addr = get_free_phys_page();

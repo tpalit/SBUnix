@@ -54,13 +54,19 @@ void do_exit(void)
 	exit();
 }
 
+void do_sleep(u32int sleep_time)
+{
+	sleep(sleep_time);
+}
+
 /* Set up the system call table*/
 void* syscalls_tbl[SYSCALL_NR] = 
 	{
 		do_write,
 		do_read, 
 		do_malloc,
-		do_exit
+		do_exit,
+		do_sleep
 	};
 
 /* 
