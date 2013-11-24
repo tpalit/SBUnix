@@ -13,6 +13,9 @@
 
 extern task_struct* CURRENT_TASK;
 
+/* Need to save the rsp. Would've been easier if we had pushed and popped rsp */
+u64int sleep_task_rsp;
+
 /* These will get invoked in kernel mode. */
 int do_write(char* s)
 {
@@ -56,26 +59,29 @@ void do_exit(void)
 
 void do_sleep(u32int sleep_time)
 {
+	CURRENT_TASK->rsp_register = sleep_task_rsp;
 	sleep(sleep_time);
 }
 
 /* Set up the system call table*/
 void* syscalls_tbl[SYSCALL_NR] = 
 	{
-		do_write,
-		do_read, 
-		do_malloc,
-		do_exit,
-		do_sleep
+		do_write, /*   0 */
+		do_read,  /*   1 */
+		do_malloc,/*   2 */
+		do_exit,  /*   3 */
+		do_sleep  /*   4 */
 	};
 
 /* 
  * The handler for the int 80h.
- * The syscall number is in %rax. 
  */
 void syscall_handler(void)
 {
-	/* Pushing dummy data to maintain uniformity with other handlers */
+	/* 
+	 * The syscall number is in rax. 
+	 * Pushing dummy data to maintain uniformity with other handlers 
+	 */
 	__asm__ __volatile__(
 			     "pushq $0x0\n\t" 
 			     "pushq %rbx\n\t"
@@ -94,6 +100,7 @@ void syscall_handler(void)
 			     "pushq %r15\n\t");
 	u64int rax;
 	__asm__ __volatile__ ("movq %%rax, %0":"=r"(rax));
+	__asm__ __volatile__("movq %%rsp, %[old_rsp]": [old_rsp] "=r"(sleep_task_rsp));
 	if (rax >= SYSCALL_NR)
 		return;
 	void *location = syscalls_tbl[rax];

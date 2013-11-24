@@ -151,26 +151,24 @@ void remove_from_sleeping_list(task_struct* task_struct_ptr)
  */
 #define mprocess_sleeping_list_on_tick()\
 {\
-	task_struct* sleeping_list_ptr = SLEEPING_LIST;\
-	task_struct* prev_ptr = NULL;\
-	if(sleeping_list_ptr != NULL){\
-		while(sleeping_list_ptr->next != NULL) {\
-			if (sleeping_list_ptr->wait_time_slices > 0){\
-				sleeping_list_ptr->wait_time_slices--;\
-				if (sleeping_list_ptr->wait_time_slices <=0){\
-					sleeping_list_ptr->wait_time_slices = 0;\
-					if (prev_ptr != NULL){\
-						prev_ptr->next = sleeping_list_ptr->next;\
-					} else {\
-						SLEEPING_LIST = NULL;\
-					}\
-					madd_to_ready_list(sleeping_list_ptr)\
-				}\
-			}\
-			prev_ptr = sleeping_list_ptr;\
-			sleeping_list_ptr = sleeping_list_ptr->next;\
-		}\
-	}\
+	task_struct* sleeping_list_ptr = SLEEPING_LIST;	\
+	task_struct* prev_ptr = NULL;			\
+	while(sleeping_list_ptr != NULL){				\
+		if (sleeping_list_ptr->wait_time_slices > 0){		\
+			sleeping_list_ptr->wait_time_slices--;		\
+			if (sleeping_list_ptr->wait_time_slices <=0){	\
+				sleeping_list_ptr->wait_time_slices = 0; \
+				if (prev_ptr != NULL){			\
+					prev_ptr->next = sleeping_list_ptr->next; \
+				} else {				\
+					SLEEPING_LIST = NULL;		\
+				}					\
+				madd_to_ready_list(sleeping_list_ptr);	\
+			}						\
+		}							\
+		prev_ptr = sleeping_list_ptr;				\
+		sleeping_list_ptr = sleeping_list_ptr->next;		\
+	}								\
 }
 
 /**
@@ -243,25 +241,31 @@ void schedule()
 		} else {
 			prev = CURRENT_TASK;
 			next = READY_LIST;
-			__asm__ __volatile__(
-					     "movq %[old_rsp], %[prev_rsp]\n\t"
-					     "movq %[next_rsp], %%rsp\n\t"
-					     :[prev_rsp] "=m" (prev->rsp_register)
-					     :[old_rsp] "r" (old_rsp),
-					     [next_rsp] "m" (next->rsp_register));
+			if(!current_inactive) {
+				/* If we're putting the process to sleep, we're saving
+				   the stack pointer at the entry of do_sleep() */
+				__asm__ __volatile__(
+						     "movq %[old_rsp], %[prev_rsp]\n\t"
+						     :[prev_rsp] "=m" (prev->rsp_register)
+						     :[old_rsp] "r" (old_rsp));
+			}
+			__asm__ __volatile__("movq %[next_rsp], %%rsp\n\t"
+					     ::[next_rsp] "m" (next->rsp_register));
 			CURRENT_TASK = READY_LIST;
 			/* Add prev to the end of the READY_LIST, unless this is marked as inactive */
 			if (!current_inactive) {
 				add_to_ready_list(prev);
-				current_inactive = 0;
 				prev = NULL;
+				READY_LIST = READY_LIST->next;
 			} else {
+				READY_LIST = READY_LIST->next;
 				/* If removing prev makes this the last entry, then add it back */
-				if (READY_LIST->next == NULL){
+				if (READY_LIST == NULL){
 					add_to_ready_list(next);
 				}
+				current_inactive = 0;
 			}
-			READY_LIST = READY_LIST->next;
+
 			__asm__ __volatile__(
 					     "movq %0, %%cr3\n\t"
 					     ::"r"(next->cr3_register));			

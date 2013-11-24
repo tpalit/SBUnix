@@ -19,7 +19,6 @@ typedef struct regs_struct* regs_struct_ptr;
  * A process can wait on an event - such as child exiting, 
  * or disk read or user entering command.
  */
-
 typedef u8int event_type;
 #define CHLD_EXT_EVT 0
 #define CMD_ENT_EVT 1

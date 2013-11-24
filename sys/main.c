@@ -58,10 +58,10 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 	__asm__ __volatile__("movq %0, %%rsp" : :"a"(&stack[INITIAL_STACK_SIZE]));
        	initialize_tss();
 	kprintf("Initializing idle process ... \n");
-	start_idle_process();
-      	make_process_from_elf("bin/hi");
-       	make_process_from_elf("bin/hello");
-	make_process_from_elf("bin/test");
+	start_idle_process(); // #0
+      	make_process_from_elf("bin/hi"); // #1 
+       	make_process_from_elf("bin/hello"); // #2
+	//	make_process_from_elf("bin/test");
 	__asm__("sti\n\t");
 	while(1);
 }

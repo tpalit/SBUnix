@@ -14,6 +14,5 @@ int main(int argc, char* argv[])
 		}
 	}
 	printf("Done test.c");
-	while(1);
 	return 0;
 }

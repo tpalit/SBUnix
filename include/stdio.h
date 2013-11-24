@@ -8,7 +8,7 @@
 #include <common.h>
 
 int printf(const char *format, ...);
-/* TODO - All this should go into the include/sys */
+/* @TODO - All this should go into the include/sys */
 int kprintf(const char *format, ...);
 int scanf(const char *format, ...);
 
