@@ -5,9 +5,9 @@
 int main(int argc, char* argv[], char* envp[])
 {
 	int k = 0;
-	while(k<30) {
+	while(k<5) {
 		printf("Hello...");
-		sleep(1);
+		sleep(100);
 		k++;
 	}
 	printf("Done hello.c");

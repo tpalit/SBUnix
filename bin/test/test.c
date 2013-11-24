@@ -1,17 +1,13 @@
-#include <stdio.h>
+#include<stdio.h>
+#include<unistd.h>
 
-int k;
 int main(int argc, char* argv[]) 
 {
 	int i = 0;
-	int k = 0;
-	while(1) {
+	while(i<10) {
 		i++;
-		if(i%100000 == 0) {
-			printf("Hello");
-			k++;
-			if(k>30) break;
-		}
+		sleep(20);
+		printf("Test");
 	}
 	printf("Done test.c");
 	return 0;

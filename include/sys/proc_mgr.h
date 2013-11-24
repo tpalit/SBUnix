@@ -40,7 +40,7 @@ struct task_struct
 {
 	char identifier;
 	u64int proc_id;
-	u32int time_slices;
+	s32int time_slices;
 	/* The registers for this process */
 	u64int pml4_entry_base;
 	u64int kernel_stack[KERNEL_STACK_SIZE];
@@ -85,6 +85,33 @@ void add_to_ready_list(task_struct* );
 }
 
 void remove_from_ready_list(task_struct* );
+
+/** 
+ * Macro version.
+ */
+/**
+ * Removes the task from the ready list.
+ */
+#define mremove_from_ready_list(task_struct_ptr)				\
+	{								\
+	task_struct* curr_task = task_struct_ptr;			\
+	task_struct* ready_list_ptr = READY_LIST;			\
+	task_struct* prev_ptr = NULL;					\
+	/* Find the task in the list and remove it. */			\
+	if (ready_list_ptr != NULL){					\
+		if(curr_task == ready_list_ptr) {			\
+			if (prev_ptr != NULL){				\
+				prev_ptr->next = curr_task->next;	\
+			}						\
+			curr_task->next = NULL;				\
+		}							\
+		prev_ptr = ready_list_ptr;				\
+		ready_list_ptr = ready_list_ptr->next;			\
+	} else {							\
+		panic("READY_LIST is empty! This should never, ever happen!"); \
+	}								\
+}
+
 void add_to_zombie_list(task_struct* );
 void add_to_sleeping_list(task_struct*, event_struct*);
 void remove_from_sleeping_list(task_struct*);

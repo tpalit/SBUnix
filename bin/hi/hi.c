@@ -4,9 +4,9 @@
 int main(void)
 {
 	int k = 0;
-	while(k<30) {
+	while(k<5) {
 		printf("Hi!!");
-		sleep(10);
+		sleep(1);
 		k++;
 	}
 	printf("Done hi.c");

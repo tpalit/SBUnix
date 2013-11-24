@@ -149,28 +149,57 @@ void remove_from_sleeping_list(task_struct* task_struct_ptr)
  * This should be invoked from schedule_on_timer() only and 
  * not from schedule().
  */
-#define mprocess_sleeping_list_on_tick()\
-{\
-	task_struct* sleeping_list_ptr = SLEEPING_LIST;	\
-	task_struct* prev_ptr = NULL;			\
-	while(sleeping_list_ptr != NULL){				\
-		if (sleeping_list_ptr->wait_time_slices > 0){		\
+/*
+#define mprocess_sleeping_list_on_tick()				\
+	{								\
+		task_struct* sleeping_list_ptr = SLEEPING_LIST;		\
+		task_struct* prev_ptr = NULL;				\
+		while(sleeping_list_ptr != NULL){			\
+			if (sleeping_list_ptr->wait_time_slices > 0){	\
+				sleeping_list_ptr->wait_time_slices--;	\
+				if (sleeping_list_ptr->wait_time_slices <=0){ \
+					sleeping_list_ptr->wait_time_slices = 0; \
+					if (prev_ptr != NULL){		\
+						prev_ptr->next = sleeping_list_ptr->next; \
+					} else {			\
+						SLEEPING_LIST = NULL;	\
+					}				\
+					madd_to_ready_list(sleeping_list_ptr); \
+				}					\
+			}						\
+			prev_ptr = sleeping_list_ptr;			\
+			sleeping_list_ptr = sleeping_list_ptr->next;	\
+		}							\
+	}
+*/
+
+#define mprocess_sleeping_list_on_tick()				\
+	{								\
+		task_struct* sleeping_list_ptr = SLEEPING_LIST;		\
+		task_struct* ready_task = NULL;				\
+		task_struct* prev_ptr = NULL;				\
+		while(sleeping_list_ptr != NULL){			\
 			sleeping_list_ptr->wait_time_slices--;		\
 			if (sleeping_list_ptr->wait_time_slices <=0){	\
-				sleeping_list_ptr->wait_time_slices = 0; \
+				/* To remove */				\
+				ready_task = sleeping_list_ptr;		\
+				ready_task->wait_time_slices = 0;	\
 				if (prev_ptr != NULL){			\
-					prev_ptr->next = sleeping_list_ptr->next; \
+					prev_ptr->next = ready_task->next; \
 				} else {				\
-					SLEEPING_LIST = NULL;		\
+					/* Start of the list */		\
+					SLEEPING_LIST = ready_task->next; \
 				}					\
-				madd_to_ready_list(sleeping_list_ptr);	\
+				sleeping_list_ptr = sleeping_list_ptr->next; \
+				madd_to_ready_list(ready_task);		\
+				/* prev_ptr doesn't change */		\
+			} else {					\
+				prev_ptr = sleeping_list_ptr;		\
+				sleeping_list_ptr = sleeping_list_ptr->next; \
 			}						\
 		}							\
-		prev_ptr = sleeping_list_ptr;				\
-		sleeping_list_ptr = sleeping_list_ptr->next;		\
 	}								\
-}
-
+	
 /**
  * Cooperative multitasking's schedule. 
  * Identical to the timer code, except that it doesn't acknowledge interrupts and
@@ -265,7 +294,6 @@ void schedule()
 				}
 				current_inactive = 0;
 			}
-
 			__asm__ __volatile__(
 					     "movq %0, %%cr3\n\t"
 					     ::"r"(next->cr3_register));			
@@ -315,12 +343,12 @@ void schedule()
 void schedule_on_timer(void)
 {
 	/**
-	 * @HACK @TODO - Calling a function pushes %rbx on to the stack which 
+	 * Calling a function pushes %rbx on to the stack which 
 	 * corrupts everything. So, no function call, till old_rsp is read.
 	 * We'll read once at the start of the function and once after pushing 
 	 * the registers
 	 */
-	mprocess_sleeping_list_on_tick()
+	mprocess_sleeping_list_on_tick();
 	u64int old_rsp;
 	if (!scheduler_inited || (READY_LIST != NULL && CURRENT_TASK->time_slices <= 0)) {
 
