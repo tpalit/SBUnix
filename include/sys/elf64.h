@@ -73,6 +73,7 @@ typedef struct
 	Elf64_Sxword r_addend; /* Constant part of expression */
 } Elf64_Rela;
 
+#define PT_LOAD 0x01
 /* The Program Header table */
 typedef struct
 {

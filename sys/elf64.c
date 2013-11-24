@@ -80,7 +80,9 @@ void parse_load_elf_segments(Elf64_Ehdr* elf64_ehdr_ptr, task_struct* task_ptr)
 	int headerCount = elf64_ehdr_ptr->e_phnum;
 	Elf64_Phdr* phdr_ptr = (Elf64_Phdr*)(((u64int)elf64_ehdr_ptr)+elf64_ehdr_ptr->e_phoff);
 	for (;headerCount>0;headerCount--) {
-	       	load_elf_segment(elf64_ehdr_ptr, phdr_ptr, task_ptr);
+		if (phdr_ptr->p_type == PT_LOAD) {
+			load_elf_segment(elf64_ehdr_ptr, phdr_ptr, task_ptr);
+		}
 		phdr_ptr++;
 	}	
 }

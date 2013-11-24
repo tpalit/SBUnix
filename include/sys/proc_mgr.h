@@ -45,42 +45,9 @@ void add_to_zombie_list(task_struct* );
 void schedule(void);
 void schedule_on_timer(void);
 void exit(void);
+void sleep(void);
 
 void create_kernel_process(task_struct*, u64int);
 void create_user_process(task_struct*, u64int);
-
-/*
- * The previous and next task structs.
- * The previous will be pushed on to the stack so that it's reference can be found
- * when restoring. 
- */
-#define switch_to(prev, next) \
-	__asm__ __volatile__(\
-			     "pushfq\n\t"\
-			     "pushq %%rbp\n\t"\
-	                     "pushq %[my_last]\n\t"\
-			     "pushq %%rax\n\t"\
-			     "pushq %%rbx\n\t"\
-			     "pushq %%rcx\n\t"\
-			     "pushq %%rdx\n\t"\
-			     "movq %%rsp, %[prev_sp]\n\t" /* Store the current rsp */\
-			     "movq %[next_sp], %%rsp\n\t" /* Restore a previously switched out sp */\
-			     "movq $1f, %[prev_ip]\n\t" /* Save IP to the 1 label */\
-			     "pushq %[next_ip]\n\t" /* Push the previously switched out IP */\
-			     "jmp __switch_to\n\t" /* Call switch_to function so that it pops the next_ip pushed */\
-			     "1:\t"\
-			     "popq %%rdx\n\t"\
-			     "popq %%rcx\n\t"\
-			     "popq %%rbx\n\t"\
-			     "popq %%rax\n\t"\
-                             "popq %[new_last]\n\t"\
-			     "popq %%rbp\n\t"\
-			     "popfq\n\t"\
-			     :[prev_sp] "=m" (prev->rsp_register),\
-		              [prev_ip] "=m" (prev->rip_register),\
-		              [new_last] "=m" (prev)\
-                             :[my_last] "m" (prev),\
-                              [next_sp] "m" (next->rsp_register),\
-			      [next_ip] "m" (next->rip_register));\
 
 #endif

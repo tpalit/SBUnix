@@ -59,9 +59,11 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
        	initialize_tss();
 	kprintf("Initializing idle process ... \n");
 	start_idle_process();
+	/*
       	make_process_from_elf("bin/hi");
        	make_process_from_elf("bin/hello");
 	make_process_from_elf("bin/test");
+	*/
 	__asm__("sti\n\t");
 	while(1);
 }

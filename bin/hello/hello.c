@@ -21,6 +21,8 @@ int main(int argc, char* argv[], char* envp[])
 			if(k>30) break;
 		}
 	}
+	int* ptr = (int*)malloc(sizeof(int));
+	*ptr = 90;
 	printf("Done hello.c");
 	return 0;
 	

@@ -63,11 +63,15 @@ void* syscalls_tbl[SYSCALL_NR] =
 		do_exit
 	};
 
-/* The handler for the int 80h */
+/* 
+ * The handler for the int 80h.
+ * The syscall number is in %rax. 
+ */
 void syscall_handler(void)
 {
+	/* Pushing dummy data to maintain uniformity with other handlers */
 	__asm__ __volatile__(
-			     "pushq %rax\n\t"
+			     "pushq $0x0\n\t" 
 			     "pushq %rbx\n\t"
 			     "pushq %rcx\n\t"
 			     "pushq %rdx\n\t"
@@ -103,8 +107,8 @@ void syscall_handler(void)
 			     "popq %rdx\n\t"
 			     "popq %rcx\n\t"
 			     "popq %rbx\n\t"
-			     "popq %rax\n\t"
-);
+			     "addq $8, %rsp\n\t" /* Discard dummy data */
+			     );
 	__asm__ ("iretq\n\t");
 }
 

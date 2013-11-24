@@ -16,7 +16,7 @@ task_struct* ZOMBIE_LIST = NULL;
 task_struct* CURRENT_TASK = NULL;
 task_struct* prev = NULL;
 task_struct* next = NULL;
-u8int current_exiting = 0;
+u8int current_inactive = 0;
 u32int PROC_ID_TOP = 0;
 
 extern pml4_e pml_entries[512];
@@ -173,10 +173,10 @@ void schedule()
 					     :[old_rsp] "r" (old_rsp),
 					     [next_rsp] "m" (next->rsp_register));
 			CURRENT_TASK = READY_LIST;
-			/* Add prev to the end of the READY_LIST, unless this is exiting */
-			if (!current_exiting) {
+			/* Add prev to the end of the READY_LIST, unless this is marked as inactive */
+			if (!current_inactive) {
 				add_to_ready_list(prev);
-				current_exiting = 0;
+				current_inactive = 0;
 				prev = NULL;
 			} else {
 				/* If removing prev makes this the last entry, then add it back */
@@ -337,8 +337,14 @@ void schedule_on_timer(void)
 					     "iretq\n\t");
 		}
 	} else {
-		/* No need to reschedule, continue running the existing process */
-		CURRENT_TASK->time_slices--;
+		/* 
+		 * No need to reschedule, continue running the existing process 
+		 * Also, no need to decrement the time slice if it is the only task in 
+		 * the system. 
+		 */
+		if (READY_LIST != NULL) {
+			CURRENT_TASK->time_slices--;
+		}
 		__asm__ __volatile__("mov $0x20, %al\n\t"
 				     "out %al, $0x20\n\t"
 				     "out %al, $0xA0\n\t"
@@ -347,14 +353,23 @@ void schedule_on_timer(void)
 }
 
 /**
- * Mark the current task as exiting and put it in the ZOMBIE list.
+ * Mark the current task as inactive and put it in the ZOMBIE list.
  * It will then invoke schedule() to schedule another process.
  */
 void exit(void)
 {
-	current_exiting = 1;
+	current_inactive = 1;
 	add_to_zombie_list(CURRENT_TASK);
 	schedule();
+}
+
+/**
+ * Mark the current task as inactive and put it in the SLEEPING list.
+ * It will then invoke schedule() to schedule another process.
+ */
+void sleep(void)
+{
+	
 }
 
 /**
