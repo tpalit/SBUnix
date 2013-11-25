@@ -86,6 +86,21 @@ void isr_handler_body_14(void)
 	__asm__ __volatile__("movq %%cr2, %[cr2_register]\n\t":[cr2_register]"=r"(faulting_address));
 	__asm__ __volatile__("movq %%r10, %[error_code]\n\t":[error_code]"=r"(error_code));
 	/* If the kernel faults or there's a fault in accessing a Present page, stop. */
+	kprintf("The error code = %x\n", error_code);
+	/*
+	u64int* pml4_ptr = (u64int*)PML4_ENTRY(faulting_address);
+	pml4_e* pml4_entry_ptr = pml4_ptr+PML4E_OFFSET((u64int)faulting_address);
+	u64int* pdp_ptr = (u64int*)PDP_ENTRY(faulting_address);
+	pdp_e* pdp_entry_ptr = pdp_ptr+PDPT_OFFSET((u64int)faulting_address);
+	u64int* pd_ptr = (u64int*)PD_ENTRY(faulting_address);
+	pd_e* pd_entry_ptr = pd_ptr+PD_OFFSET((u64int)faulting_address);
+	u64int* pt_ptr = (u64int*)PT_ENTRY(faulting_address);
+	pt_e* pt_entry_ptr = pt_ptr+PT_OFFSET((u64int)faulting_address);
+	kprintf("pml4_entry_ptr = %p\n", *pml4_entry_ptr);
+	kprintf("pdp_entry_ptr = %p\n", *pdp_entry_ptr);
+	kprintf("pd_entry_ptr = %p\n", *pd_entry_ptr);
+	kprintf("pt_entry_ptr = %p\n", *pt_entry_ptr);
+	*/
 	dump_regs();
 	panic("Page fault!");
 	if (faulting_address >= KERN_VIR_START || (error_code & 0x01)) { 
