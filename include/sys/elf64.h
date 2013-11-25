@@ -1,3 +1,6 @@
+#ifndef _ELF64_H
+#define _ELF64_H
+
 /**
  * Header file for the ELF64 structures. 
  */
@@ -100,3 +103,5 @@ task_struct* make_process_from_elf(char*);
 void allocate_heap(task_struct*);
 
 void allocate_stack(task_struct*);
+
+#endif

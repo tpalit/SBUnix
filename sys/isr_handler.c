@@ -86,6 +86,8 @@ void isr_handler_body_14(void)
 	__asm__ __volatile__("movq %%cr2, %[cr2_register]\n\t":[cr2_register]"=r"(faulting_address));
 	__asm__ __volatile__("movq %%r10, %[error_code]\n\t":[error_code]"=r"(error_code));
 	/* If the kernel faults or there's a fault in accessing a Present page, stop. */
+	dump_regs();
+	panic("Page fault!");
 	if (faulting_address >= KERN_VIR_START || (error_code & 0x01)) { 
 		/* Page fault in Kernel */
 		dump_regs();

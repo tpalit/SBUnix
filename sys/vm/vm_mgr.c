@@ -87,6 +87,14 @@ pt_e* create_pt_e(pt_e* pt_ptr, u64int phys_base_addr, u8int avl, u8int flags,
 	return pt_ptr;
 }
 
+void init_pml_tbl(u64int* pml_entries)
+{
+	int i = 0;
+	for (i=0; i<512; i++) {
+		create_pml4_e(&pml_entries[i], 0x0, 0x0, 0x06, 0x00);		
+	}
+}
+
 void init_pdp_tbl(u64int* pdp_entries)
 {
 	int i = 0;
@@ -183,7 +191,7 @@ void static_map_pg(u64int vir_pg, u64int phys_pg)
 		pdp_entry = &pdp_entries[pdp_offset];
 	} else {
 		/* Create a new pdpe entry*/
-		pdp_entry = create_pdp_e(&pdp_entries[pdp_offset], (u64int)&pd_entries, 0x0, 0x06, 0x00); // pd is not yet created
+		pdp_entry = create_pdp_e(&pdp_entries[pdp_offset], (u64int)&pd_entries, 0x0, 0x02, 0x00); // pd is not yet created
 		set_base_addr(pml4e_entry, (u64int)pdp_entries);
 		set_present(pml4e_entry);
 	}
@@ -193,7 +201,7 @@ void static_map_pg(u64int vir_pg, u64int phys_pg)
 		pd_entry = &pd_entries[pd_offset];
 	} else {
 		/* Create new pde entry */
-		pd_entry = create_pd_e(&pd_entries[pd_offset], (u64int)&pt_entries, 0x0, 0x06, 0x00);
+		pd_entry = create_pd_e(&pd_entries[pd_offset], (u64int)&pt_entries, 0x0, 0x02, 0x00);
 		set_base_addr(pdp_entry, (u64int)pd_entries);
 		set_present(pdp_entry);
 	}
@@ -202,7 +210,7 @@ void static_map_pg(u64int vir_pg, u64int phys_pg)
 	
 	/* Create new pte entry */
 	if(!is_present((u64int)pd_entry)){
-		create_pt_e(&pt_entries[pt_offset], phys_pg, 0x0, 0x07, 0x00);
+		create_pt_e(&pt_entries[pt_offset], phys_pg, 0x0, 0x03, 0x00);
 		set_base_addr(pd_entry, (u64int)pt_entries);
 		set_present(pd_entry);
 	}
@@ -352,8 +360,8 @@ u64int get_free_page(void)
 
 phys_vir_addr page_addr;
 /*
- * This should never be used from outside the kernel. It uses a globally 
- * allocated structure, whose data might get corrupted by other threads. 
+ * This function uses a globally allocated structure.
+ * Use with care.
  */
 phys_vir_addr* get_free_phys_page(void)
 {

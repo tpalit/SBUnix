@@ -12,6 +12,7 @@
 #define DEFAULT_TIME_SLICE 5
 #define DEFAULT_FLAGS 0x20202
 
+
 typedef struct regs_struct regs_struct;
 typedef struct regs_struct* regs_struct_ptr;
 
@@ -25,7 +26,7 @@ typedef u8int event_type;
 
 struct event_struct
 {
-	u64int proc_id; /* The id of the process waiting on this event. */
+	u64int pid; /* The id of the process waiting on this event. */
 	event_type event;
 	void* event_opt_info; /* Optional information - e.g. child process */
 };
@@ -39,7 +40,8 @@ typedef struct event_struct event_struct;
 struct task_struct
 {
 	char identifier;
-	u64int proc_id;
+	u64int pid;
+	struct task_struct* parent_task;
 	s32int time_slices;
 	/* The registers for this process */
 	u64int pml4_entry_base;

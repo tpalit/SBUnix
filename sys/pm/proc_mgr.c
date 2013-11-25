@@ -518,11 +518,11 @@ void create_kernel_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->rflags = DEFAULT_FLAGS;
 	task_struct_ptr->next = NULL;
 	task_struct_ptr->last_run = NULL;
-	task_struct_ptr->proc_id = PROC_ID_TOP++;
+	task_struct_ptr->pid = PROC_ID_TOP++;
 	task_struct_ptr->vm_head = NULL;
 	task_struct_ptr->waiting_on = NULL;
 	task_struct_ptr->wait_time_slices = 0;
-
+	task_struct_ptr->parent_task = NULL;
 	/* Set up the process address space */
 	/* This has to be aligned on 0x1000 boundaries and need the physical address */
 	phys_vir_addr* page_addr = get_free_phys_page();
@@ -552,7 +552,7 @@ void create_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 {
 	/* Set up task parameters as per what IRETQ expects*/
 	task_struct_ptr->kernel_stack[127] = 0x23;
-	task_struct_ptr->kernel_stack[126] = (u64int)&task_struct_ptr->kernel_stack[127];
+	task_struct_ptr->kernel_stack[126] = BAD_ADDRESS; /* Overwrite later */
 	task_struct_ptr->kernel_stack[125] = DEFAULT_FLAGS;
 	task_struct_ptr->kernel_stack[124] = 0x1b;
 	task_struct_ptr->kernel_stack[123] = function_ptr;
@@ -568,7 +568,8 @@ void create_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->rflags = 0x20202;
 	task_struct_ptr->next = NULL;
 	task_struct_ptr->last_run = NULL;
-	task_struct_ptr->proc_id = PROC_ID_TOP++;
+	task_struct_ptr->pid = PROC_ID_TOP++;
+	task_struct_ptr->parent_task = NULL;
 	task_struct_ptr->vm_head = NULL;
 	task_struct_ptr->waiting_on = NULL;
 	task_struct_ptr->wait_time_slices = 0;
@@ -584,13 +585,12 @@ void create_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 	for(i=0; i<512; i++){
 		if (i==PML4_REC_SLOT) {
 			/* The recursive mapping */
-			create_pml4_e(&pml_entries_ptr[i], (u64int)page_addr->phys_addr, 0x0, 0x07, 0x00);
+			create_pml4_e(&pml_entries_ptr[i], (u64int)page_addr->phys_addr, 0x0, 0x03, 0x00);
 		} else {
 			pml_entries_ptr[i] = pml_entries[i];			
 
 		}
 	}
-
 	cr3_reg process_cr3;
 	create_cr3_reg(&process_cr3, (u64int)page_addr->phys_addr, 0x00, 0x00);
 	task_struct_ptr->cr3_register = process_cr3;

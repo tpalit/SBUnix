@@ -8,23 +8,18 @@
 #include<sys/proc_mgr.h>
 #include<sys/kstring.h>
 #include<stdio.h>
+#include<sys/fork.h>
 
 #define SYSCALL_NR 10
 
 extern task_struct* CURRENT_TASK;
 
 /* Need to save the rsp. Would've been easier if we had pushed and popped rsp */
-u64int sleep_task_rsp;
+u64int syscalling_task_rsp;
 
 /* These will get invoked in kernel mode. */
 int do_write(char* s)
 {
-	/*
-	while(*s != '\0'){
-		putchar(*s++);
-	}
-	return 42;
-	*/
 	kprintf(s);
 	return 0;
 }
@@ -59,7 +54,7 @@ void do_exit(void)
 
 void do_sleep(u32int sleep_time)
 {
-	CURRENT_TASK->rsp_register = sleep_task_rsp;
+	CURRENT_TASK->rsp_register = syscalling_task_rsp;
 	sleep(sleep_time);
 }
 
@@ -70,7 +65,8 @@ void* syscalls_tbl[SYSCALL_NR] =
 		do_read,  /*   1 */
 		do_malloc,/*   2 */
 		do_exit,  /*   3 */
-		do_sleep  /*   4 */
+		do_sleep, /*   4 */
+		do_fork   /*   5 */
 	};
 
 /* 
@@ -80,10 +76,11 @@ void syscall_handler(void)
 {
 	/* 
 	 * The syscall number is in rax. 
-	 * Pushing dummy data to maintain uniformity with other handlers 
+	 * The result will also be in the rax.
+	 * So don't pop back rax.
 	 */
 	__asm__ __volatile__(
-			     "pushq $0x0\n\t" 
+			     "pushq %rax\n\t" 
 			     "pushq %rbx\n\t"
 			     "pushq %rcx\n\t"
 			     "pushq %rdx\n\t"
@@ -100,7 +97,7 @@ void syscall_handler(void)
 			     "pushq %r15\n\t");
 	u64int rax;
 	__asm__ __volatile__ ("movq %%rax, %0":"=r"(rax));
-	__asm__ __volatile__("movq %%rsp, %[old_rsp]": [old_rsp] "=r"(sleep_task_rsp));
+	__asm__ __volatile__("movq %%rsp, %[old_rsp]": [old_rsp] "=r"(syscalling_task_rsp));
 	if (rax >= SYSCALL_NR)
 		return;
 	void *location = syscalls_tbl[rax];
@@ -120,7 +117,7 @@ void syscall_handler(void)
 			     "popq %rdx\n\t"
 			     "popq %rcx\n\t"
 			     "popq %rbx\n\t"
-			     "addq $8, %rsp\n\t" /* Discard dummy data */
+			     "addq $8, %rsp\n\t" /* Don't want to overwrite the rax register */
 			     );
 	__asm__ ("iretq\n\t");
 }
