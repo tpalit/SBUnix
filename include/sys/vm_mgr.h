@@ -36,9 +36,18 @@ cr3_reg* create_cr3_reg(cr3_reg*, u64int, int, int);
 
 u64int* set_base_addr(u64int*, u64int);
 
+int is_supervisor(u64int);
 int is_present(u64int);
 void set_present(u64int*);
 u64int find_base_addr(u64int);
+int is_present(u64int);
+void set_present(u64int*);
+int is_readonly(u64int);
+int is_cow(u64int);
+void set_readonly(u64int*);
+void unset_readonly(u64int*);
+void set_cow(u64int*);
+void unset_cow(u64int*);
 
 void init_pml_tbl(u64int*);
 void init_pdp_tbl(u64int*);

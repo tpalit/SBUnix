@@ -9,9 +9,12 @@
 #include<common.h>
 #include<stdio.h>
 #include<sys/proc_mgr.h>
+#include<sys/pm_mgr.h>
 #include<sys/vm_mgr.h>
 #include<sys/kstring.h>
 #include<sys/terminal.h>
+
+u8int backup_page[PAGE_SIZE];
 
 extern u64int ticks;
 
@@ -88,30 +91,57 @@ void isr_handler_body_14(void)
 	/* If the kernel faults or there's a fault in accessing a Present page, stop. */
 	kprintf("The faulting address = %p\n", faulting_address);
 	kprintf("The error code = %x\n", error_code);
+	
+	/* Get the PTE entry for the faulting address */
+	u64int* ptr = (u64int*)PT_ENTRY(faulting_address);
+	pt_e* pte_entry = ptr + PT_OFFSET(faulting_address); 
+	kprintf("*pte_entry = %p\n", *pte_entry);
+	if(is_supervisor(*pte_entry) || faulting_address >= KERN_VIR_START) {
+		/* Page fault in kernel. Panic */
+		dump_regs();
+		panic("Page fault in kernel!");
+	} else if (is_present(*pte_entry) && is_readonly(*pte_entry) && is_cow(*pte_entry)) {
+		/* 
+		 * Copy on write!
+		 * Steps - 
+		 * 1. Allocate a new physical page.
+		 * 2. Read the faulting page and copy its contents to the new page.
+		 * 3. Update the PTE entry to point to the new physical page.
+		 * 4. Unset cow and readonly.
+		 */
+		kmemcpy(backup_page, (void*)((u64int)faulting_address & 0xfffffffffffff000), PAGE_SIZE);
+		phys_vir_addr* page_ptr = get_free_phys_page();
+		set_base_addr(pte_entry, page_ptr->phys_addr);
+		kmemcpy((void*)((u64int)faulting_address & 0xfffffffffffff000), backup_page, PAGE_SIZE);
+		unset_cow(pte_entry);
+		unset_readonly(pte_entry);
+	} else if (!is_present(*pte_entry)){
+		/* Perhaps page faulted on a mallocked page */
+		vm_struct* vm_struct_ptr = CURRENT_TASK->vm_head;
+		while (vm_struct_ptr != NULL){
+			if (faulting_address >= vm_struct_ptr->vm_start && 
+			    faulting_address <= vm_struct_ptr->vm_end){
+				vma_to_map = vm_struct_ptr;
+				okay_to_map = 1;
+				break;
+			}
+			vm_struct_ptr = vm_struct_ptr->vm_next;
+		}
+		if(okay_to_map){
+			kmmap((void*)vma_to_map->vm_start, 
+			      vma_to_map->vm_end-vma_to_map->vm_start,
+			      0, 0, 0, 0);
+		}
+	} else {
+		dump_regs();
+		panic("Unhandled page fault!");
+	}
+
 	/*
-	u64int* pml4_ptr = (u64int*)PML4_ENTRY(faulting_address);
-	pml4_e* pml4_entry_ptr = pml4_ptr+PML4E_OFFSET((u64int)faulting_address);
-	u64int* pdp_ptr = (u64int*)PDP_ENTRY(faulting_address);
-	pdp_e* pdp_entry_ptr = pdp_ptr+PDPT_OFFSET((u64int)faulting_address);
-	u64int* pd_ptr = (u64int*)PD_ENTRY(faulting_address);
-	pd_e* pd_entry_ptr = pd_ptr+PD_OFFSET((u64int)faulting_address);
-	u64int* pt_ptr = (u64int*)PT_ENTRY(faulting_address);
-	pt_e* pt_entry_ptr = pt_ptr+PT_OFFSET((u64int)faulting_address);
-	kprintf("pml4_entry_ptr = %p\n", *pml4_entry_ptr);
-	kprintf("pdp_entry_ptr = %p\n", *pdp_entry_ptr);
-	kprintf("pd_entry_ptr = %p\n", *pd_entry_ptr);
-	kprintf("pt_entry_ptr = %p\n", *pt_entry_ptr);
-	*/
-	dump_regs();
-	panic("Page fault!");
 	if (faulting_address >= KERN_VIR_START || (error_code & 0x01)) { 
-		/* Page fault in Kernel */
 		dump_regs();
 		panic("Bad type of Page fault Happened!");
 	} else {
-		/* @TODO - Assume that the CURRENT_TASK has caused the page fault. 
-		*  Check if this is always true.
-		*/
 		vm_struct* vm_struct_ptr = CURRENT_TASK->vm_head;
 		while (vm_struct_ptr != NULL){
 			if (faulting_address >= vm_struct_ptr->vm_start && 
@@ -128,6 +158,7 @@ void isr_handler_body_14(void)
 		      vma_to_map->vm_end-vma_to_map->vm_start,
 		      0, 0, 0, 0);
 	}
+	*/
 }
 
 

@@ -15,8 +15,9 @@
 extern task_struct* CURRENT_TASK;
 
 /* Need to save the rsp. Would've been easier if we had pushed and popped rsp */
-u64int syscalling_task_rsp;
+u64int syscalling_task_rsp; /* kernel stack */
 u64int syscall_ret_address;
+u64int syscalling_task_user_rsp; /* the user stack */
 
 /* These will get invoked in kernel mode. */
 int do_write(char* s)
@@ -100,6 +101,7 @@ void syscall_handler(void)
 	__asm__ __volatile__ ("movq %%rax, %0":"=r"(rax));
 	__asm__ __volatile__("movq %%rsp, %[old_rsp]\n\t": [old_rsp] "=r"(syscalling_task_rsp));
 	__asm__ __volatile__("movq 120(%%rsp), %[ret_addr]\n\t":[ret_addr] "=r"(syscall_ret_address) );
+	__asm__ __volatile__("movq 144(%%rsp), %[ustck_addr]\n\t":[ustck_addr] "=r"(syscalling_task_user_rsp) );
 	if (rax >= SYSCALL_NR)
 		return;
 	void *location = syscalls_tbl[rax];

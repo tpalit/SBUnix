@@ -1,5 +1,6 @@
 #include<sys/kstring.h>
 #include<common.h>
+#include<stdio.h>
 
 int kstrcmp(char* str1, char* str2)
 {
@@ -38,6 +39,9 @@ void* kmemcpy(void* dest, void* src, int count)
 	char* dst1 = (char*)dest;
         char* src1 = (char*)src;
         while (count--) {
+		if (dst1 == (char*)0xa00f30) {
+			kprintf("Copied it!");
+		}
 		*dst1++ = *src1++;
         }
         return dest;

@@ -8,7 +8,7 @@ extern task_struct* CURRENT_TASK;
 extern u32int PROC_ID_TOP;
 extern pml4_e pml_entries[512];
 extern u64int syscall_ret_address;
-
+extern u64int syscalling_task_user_rsp;
 /**
  * While forking, we need to be able to play with the paging structures of both the
  * parent and child process. And since we are using recursive mapping, I can't do 
@@ -248,10 +248,14 @@ void copy_paging_structures(task_struct* parent_task, task_struct* child_task)
 						pt_entries_ptr = get_pt_base_from_cache(&pd_entries_ptr[PD_OFFSET(i2)]);
 					}
 					for(i1 = i2; i1 < i2+PD_RANGE && i1 < parent_vma_ptr->vm_end; i1+= PT_RANGE){
-						/* For each pt entry, copy it! If already present, panic*/
+						/* For each pt entry, copy it and set cow and readonly ! If already present, panic*/
 						if (!is_present((u64int)pt_entries_ptr[PT_OFFSET(i1)])) {
 							pt_e* page_table_entry = (pt_e*)PT_ENTRY(i1);
 							pt_entries_ptr[PT_OFFSET(i1)] = page_table_entry[PT_OFFSET(i1)];
+							set_cow(&pt_entries_ptr[PT_OFFSET(i1)]);
+							set_cow(&page_table_entry[PT_OFFSET(i1)]);
+							set_readonly(&pt_entries_ptr[PT_OFFSET(i1)]);
+							set_readonly(&page_table_entry[PT_OFFSET(i1)]);
 						} else {
 							panic("Tried to map an already mapped page!");
 						}
@@ -319,7 +323,7 @@ void setup_stack(task_struct* child_task)
 	 * The compiler will pop off stuff as it is returning from a syscall.
 	 * This includes the registers. @TODO - Shouldn't these be restored? Check later.
 	 */
-	child_task->kernel_stack[126] = 0xa00f28; 
+	child_task->kernel_stack[126] = syscalling_task_user_rsp;
 	child_task->kernel_stack[125] = DEFAULT_FLAGS;
 	child_task->kernel_stack[124] = 0x1b;
 	child_task->kernel_stack[123] = syscall_ret_address;

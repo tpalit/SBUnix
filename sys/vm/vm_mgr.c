@@ -132,6 +132,11 @@ cr3_reg* create_cr3_reg(cr3_reg* cr3_reg, u64int pml4e_tbl_base, int pcd, int pw
 	return cr3_reg;
 }
 
+int is_supervisor(u64int entry)
+{
+	return !((entry>>2)&0x01);
+}
+
 int is_present(u64int entry)
 {
 	return entry&0x01;
@@ -141,6 +146,40 @@ void set_present(u64int* entry)
 {
 	*entry |= 0x01;
 }
+
+int is_readonly(u64int entry)
+{
+	return !((entry>>1)&0x01);
+}
+
+int is_cow(u64int entry)
+{
+	return ((entry>>8)&0x01);
+}
+
+void set_readonly(u64int* entry)
+{
+	/* Clear the write bit */
+	*entry &= 0xfffffffffffffffd;
+}
+
+void unset_readonly(u64int* entry)
+{
+	/* Set the write bit */
+	*entry |= 0x02;
+}
+
+void set_cow(u64int* entry)
+{
+	*entry |= 0x100;
+}
+
+void unset_cow(u64int* entry)
+{
+	/* Clear the cow bit */
+	*entry &= 0xfffffffffffffdff;
+}
+
 /*
  * This file will extract the "base address" field
  * of any of the PML4E, PDPE, PDE or PTE entries.
