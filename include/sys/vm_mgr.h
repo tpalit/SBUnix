@@ -35,11 +35,12 @@ pt_e* create_pt_e(pt_e*, u64int, u8int, u8int, u8int);
 cr3_reg* create_cr3_reg(cr3_reg*, u64int, int, int);
 
 u64int* set_base_addr(u64int*, u64int);
+
 int is_present(u64int);
 void set_present(u64int*);
 u64int find_base_addr(u64int);
 
-void init_pml4_tbl(u64int*);
+void init_pml_tbl(u64int*);
 void init_pdp_tbl(u64int*);
 void init_pd_tbl(u64int*);
 void init_pt_tbl(u64int*);

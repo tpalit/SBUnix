@@ -10,6 +10,69 @@ extern pml4_e pml_entries[512];
 extern u64int syscall_ret_address;
 
 /**
+ * While forking, we need to be able to play with the paging structures of both the
+ * parent and child process. And since we are using recursive mapping, I can't do 
+ * that (unless we load and unload the %cr3 register each time). So, I'm maintaining
+ * a cache of the vir<->phys mapping that will expire after all of parent's paging
+ * structures is copied to the child. This is that cache.
+ */
+mem_mapping_struct* cache_head = NULL;
+
+void cache_mapping(phys_vir_addr* phys_vir_pg) 
+{
+	mem_mapping_struct* cache_ptr = (mem_mapping_struct*)kmalloc(sizeof(mem_mapping_struct));
+	mem_mapping_struct* cache_trav_ptr = cache_head;
+	cache_ptr->vir_addr = phys_vir_pg->vir_addr;
+	cache_ptr->phys_addr = phys_vir_pg->phys_addr;
+	cache_ptr->next = NULL;
+	if(cache_head == NULL){
+		cache_head = cache_ptr;
+	} else if(cache_head->next == NULL){
+		cache_head->next = cache_ptr;
+	} else {
+		while(cache_trav_ptr->next != NULL){
+			cache_trav_ptr = cache_trav_ptr->next;
+		}
+		cache_trav_ptr->next = cache_ptr;
+	}
+}
+
+pdp_e* get_pdp_base_from_cache(pml4_e* pml4_entry_ptr)
+{
+	u64int phys_base_addr = find_base_addr((u64int)*pml4_entry_ptr);
+	u64int vir_base_addr = find_vir_addr_from_cache(phys_base_addr);
+	return (pdp_e*)vir_base_addr;
+}
+
+pd_e* get_pd_base_from_cache(pdp_e* pdp_entry_ptr)
+{
+	u64int phys_base_addr = find_base_addr((u64int)*pdp_entry_ptr);
+	u64int vir_base_addr = find_vir_addr_from_cache(phys_base_addr);
+	return (pd_e*)vir_base_addr;
+}
+
+pt_e* get_pt_base_from_cache(pd_e* pd_entry_ptr) 
+{
+	u64int phys_base_addr = find_base_addr((u64int)*pd_entry_ptr);
+	u64int vir_base_addr = find_vir_addr_from_cache(phys_base_addr);
+	return (pt_e*)vir_base_addr;
+}
+
+u64int find_vir_addr_from_cache(u64int phys_addr)
+{
+	mem_mapping_struct* cache_trav_ptr = cache_head;
+	while(cache_trav_ptr != NULL){
+		if (cache_trav_ptr->phys_addr == phys_addr){
+			return cache_trav_ptr->vir_addr;
+		}
+		cache_trav_ptr = cache_trav_ptr->next;
+	}
+	panic("Trouble setting up pages for child!");
+	return NULL; /* keep compiler happy */
+}
+
+
+/**
  * The heart of the forking functionality. 
  * Steps --
  * 1. Create a (new) child task_struct.
@@ -85,8 +148,11 @@ void test(task_struct* ptr)
 	kprintf("pdp_entry_ptr = %p\n", *pdp_entry_ptr);
 	kprintf("pd_entry_ptr = %p\n", *pd_entry_ptr);
 	kprintf("pt_entry_ptr = %p\n", *pt_entry_ptr);
+	*(int*)faulting_address = 10;
+	kprintf("Wrote %d", *(int*)faulting_address);
 	while(1);
 }
+
 
 /**
  * Copy the paging structures. 
@@ -108,6 +174,7 @@ void copy_paging_structures(task_struct* parent_task, task_struct* child_task)
 	/* Map the higher memory(kernel) by copying the PML4E*/
 	pml4_e* pml_entries_ptr = (pml4_e*)pml4e_page->vir_addr;
 	u64int pml_entries_phys_addr = pml4e_page->phys_addr;
+
 	pdp_e* pdp_entries_ptr = NULL;
 	u64int pdp_entries_phys_addr = NULL;
 	pd_e* pd_entries_ptr = NULL;
@@ -115,84 +182,88 @@ void copy_paging_structures(task_struct* parent_task, task_struct* child_task)
 	pt_e* pt_entries_ptr = NULL;
 	u64int pt_entries_phys_addr = NULL;
 
-	int i = 0;
-	for(i=0; i<512; i++){
-		if (i==PML4_REC_SLOT) {
-			/* The recursive mapping */
-			create_pml4_e(&pml_entries_ptr[i], (u64int)pml4e_page->phys_addr, 0x0, 0x03, 0x00);
-		} else {
-			pml_entries_ptr[i] = pml_entries[i];			
-		}
-	}
+	init_pml_tbl(pml_entries_ptr);
+	create_pml4_e(&pml_entries_ptr[PML4_REC_SLOT], (u64int)pml4e_page->phys_addr, 0x0, 0x03, 0x00);
+	pml_entries_ptr[511] = pml_entries[511];
 
+	pml4e_page = NULL;
 	cr3_reg process_cr3;
 	create_cr3_reg(&process_cr3, (u64int)pml_entries_phys_addr, 0x00, 0x00);
 	child_task->cr3_register = process_cr3;
-	/*
-	__asm__ __volatile__(
-			     "movq %%cr3, %0\n\t"
-			     :"=r"(old_cr3));
-	__asm__ __volatile__(
-			     "movq %0, %%cr3\n\t"
-			     ::"r"(child_task->cr3_register));
-	*/
-	kprintf("HERE\n");
+
 	/* Map the parent's pages */
 	while(parent_vma_ptr != NULL){
-		kprintf("vm_start = %p, vm_end = %p", parent_vma_ptr->vm_start, parent_vma_ptr->vm_end);
 		for(i4 = parent_vma_ptr->vm_start; i4 < parent_vma_ptr->vm_end; i4 += PML4_RANGE){
-			/* For each pml4 entry, allocate a pdp table and set it's base address. */
-			phys_vir_addr* pdp_page = get_free_phys_page();
-			pdp_entries_ptr = (pdp_e*)pdp_page->vir_addr;
-			pdp_entries_phys_addr = pdp_page->phys_addr;
-			//			kprintf("The pdp entries phys address = %p", pdp_page->phys_addr);
-			init_pdp_tbl(pdp_entries_ptr);
-			kprintf("i4 = %p PML4E offset = %x", i4, PML4E_OFFSET(i4));
-			set_base_addr(&pml_entries[PML4E_OFFSET(i4)], pdp_entries_phys_addr);
-			set_present(&pml_entries[PML4E_OFFSET(i4)]);
-			//			kprintf("PML wrote = %p\n", pml_entries_ptr[PML4E_OFFSET(i2)]);
+			/* For each pml4 entry, if not present allocate a pdp table and set it's base address. */
+			if(!is_present((u64int)pml_entries_ptr[PML4E_OFFSET(i4)])){
+				phys_vir_addr* pdp_page = get_free_phys_page();
+				cache_mapping(pdp_page);
+				pdp_entries_ptr = (pdp_e*)pdp_page->vir_addr;
+				pdp_entries_phys_addr = pdp_page->phys_addr;
+				pdp_page = NULL;
+				init_pdp_tbl(pdp_entries_ptr);
+				set_base_addr(&pml_entries_ptr[PML4E_OFFSET(i4)], pdp_entries_phys_addr);
+				set_present(&pml_entries_ptr[PML4E_OFFSET(i4)]);
+			} else {
+				/*
+				u64int* pdp_ptr_base = get_pdp_base_from_cache(&pml_entries_ptr[PML4E_OFFSET(i4)]);
+				pdp_entries_ptr = pdp_ptr_base+PDPT_OFFSET((u64int)i4);
+				*/
+				pdp_entries_ptr = get_pdp_base_from_cache(&pml_entries_ptr[PML4E_OFFSET(i4)]);
+			}
 			for(i3 = i4; i3 < i4+PML4_RANGE && i3 < parent_vma_ptr->vm_end; i3 += PDP_RANGE){
-				/* For each pdp entry, allocate a pd table and set it's base address. */
-				phys_vir_addr* pd_page = get_free_phys_page();
-				pd_entries_ptr = (pd_e*)pd_page->vir_addr;
-				pd_entries_phys_addr = pd_page->phys_addr;
-				//	kprintf("The pd entries phys address = %p", pd_page->phys_addr);
-				init_pd_tbl(pd_entries_ptr);
-				kprintf("i3 = %p, PDPT offset = %x", i3, PDPT_OFFSET(i3));
-				set_base_addr(&pdp_entries_ptr[PDPT_OFFSET(i3)], pd_entries_phys_addr);
-				set_present(&pdp_entries_ptr[PDPT_OFFSET(i3)]);
-				kprintf("PDP wrote = %p", pdp_entries_ptr[PDPT_OFFSET(i2)]);
+				/* For each pdp entry, if not present, allocate a pd table and set it's base address. */
+				if(!is_present((u64int)pdp_entries_ptr[PDPT_OFFSET(i3)])) {
+					phys_vir_addr* pd_page = get_free_phys_page();
+					cache_mapping(pd_page);
+					pd_entries_ptr = (pd_e*)pd_page->vir_addr;
+					pd_entries_phys_addr = pd_page->phys_addr;
+					pd_page = NULL;
+					init_pd_tbl(pd_entries_ptr);
+					set_base_addr(&pdp_entries_ptr[PDPT_OFFSET(i3)], pd_entries_phys_addr);
+					set_present(&pdp_entries_ptr[PDPT_OFFSET(i3)]);
+				} else {
+					/*
+					u64int* pd_ptr_base = get_pd_base_from_cache(&pdp_entries_ptr[PDPT_OFFSET(i3)]);
+					pd_entries_ptr = pd_ptr_base+PD_OFFSET((u64int)i3);
+					*/
+					pd_entries_ptr = get_pd_base_from_cache(&pdp_entries_ptr[PDPT_OFFSET(i3)]);
+				}
 				for(i2 = i3; i2 < i3+PDP_RANGE && i2 < parent_vma_ptr->vm_end; i2 += PD_RANGE){
-					/* For each pd entry, allocate a pt table and set it's base address. */					
-					phys_vir_addr* pt_page = get_free_phys_page();
-					pt_entries_ptr = (pt_e*)pt_page->vir_addr;
-					pt_entries_phys_addr = pt_page->phys_addr;
-					//	kprintf("The pt entries phys address = %p", pt_page->phys_addr);
-					init_pt_tbl(pt_entries_ptr);
-					kprintf("i2 = %p, PD offset = %x", i2, PD_OFFSET(i2));
-					set_base_addr(&pd_entries_ptr[PD_OFFSET(i2)], pt_entries_phys_addr);
-					set_present(&pd_entries_ptr[PD_OFFSET(i2)]);
-					kprintf("PD wrote = %p", pd_entries_ptr[PD_OFFSET(i2)]);
+					/* For each pd entry, if not present, allocate a pt table and set it's base address. */					
+					if (!is_present((u64int)pd_entries_ptr[PD_OFFSET(i2)])) {
+						phys_vir_addr* pt_page = get_free_phys_page();
+						cache_mapping(pt_page);
+						pt_entries_ptr = (pt_e*)pt_page->vir_addr;
+						pt_entries_phys_addr = pt_page->phys_addr;
+						pt_page = NULL;
+						init_pt_tbl(pt_entries_ptr);
+						set_base_addr(&pd_entries_ptr[PD_OFFSET(i2)], pt_entries_phys_addr);
+						set_present(&pd_entries_ptr[PD_OFFSET(i2)]);
+					} else {
+						/*
+						u64int* pt_ptr_base = get_pt_base_from_cache(&pd_entries_ptr[PD_OFFSET(i2)]);
+						pt_entries_ptr = pt_ptr_base+PT_OFFSET((u64int)i2);
+						*/
+						pt_entries_ptr = get_pt_base_from_cache(&pd_entries_ptr[PD_OFFSET(i2)]);
+					}
 					for(i1 = i2; i1 < i2+PD_RANGE && i1 < parent_vma_ptr->vm_end; i1+= PT_RANGE){
-						/* For each pt entry, copy it!*/
-						kprintf("i1 = %p, PT offset = %x", i1, PT_OFFSET(i1));
-						kprintf("pt_entries_ptr = %p", pt_entries_ptr);
-						pt_e* page_table_entry = (pt_e*)PT_ENTRY(i1);
-						pt_entries_ptr[PT_OFFSET(i1)] = page_table_entry[PT_OFFSET(i1)];
-						kprintf("PT Wrote = %p", pt_entries_ptr[PT_OFFSET(i1)]);
+						/* For each pt entry, copy it! If already present, panic*/
+						if (!is_present((u64int)pt_entries_ptr[PT_OFFSET(i1)])) {
+							pt_e* page_table_entry = (pt_e*)PT_ENTRY(i1);
+							pt_entries_ptr[PT_OFFSET(i1)] = page_table_entry[PT_OFFSET(i1)];
+						} else {
+							panic("Tried to map an already mapped page!");
+						}
 					}
 				}
 			}
 		}
 		parent_vma_ptr = parent_vma_ptr->vm_next;
-		kprintf("\n");
 	}
-	/*
-	__asm__ __volatile__(
-			     "movq %0, %%cr3\n\t"
-			     ::"r"(old_cr3));	
-	*/
-	test(child_task);
+	/* Clear the cached mappings. */
+	cache_head = NULL;
+	//	test(child_task);
 }
 
 
@@ -244,10 +315,10 @@ void setup_stack(task_struct* child_task)
 	}
 	/* Set up task parameters as per what IRETQ expects*/
 	child_task->kernel_stack[127] = 0x23;
-	child_task->kernel_stack[126] = stack_vma->vm_end;
+	/* The compiler will pop off stuff as it is returning from a syscall */
+	child_task->kernel_stack[126] = stack_vma->vm_end; 
 	child_task->kernel_stack[125] = DEFAULT_FLAGS;
 	child_task->kernel_stack[124] = 0x1b;
-	kprintf("return to %p", syscall_ret_address);
 	child_task->kernel_stack[123] = syscall_ret_address;
 	
 	/* Pretend that the GP registers and one function call is also on the stack 
@@ -258,3 +329,4 @@ void setup_stack(task_struct* child_task)
 	}
 	child_task->rsp_register = (u64int)&child_task->kernel_stack[108];
 }
+

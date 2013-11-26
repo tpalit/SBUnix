@@ -144,11 +144,12 @@ void set_present(u64int* entry)
 /*
  * This file will extract the "base address" field
  * of any of the PML4E, PDPE, PDE or PTE entries.
- * "base address" should be 40 bits.
+ * "base address" should be 40 bits. 
+ * Note - Only the "page aligned" information stored. 
  */
 u64int find_base_addr(u64int entry)
 {
-	return ((entry >> 12) & 0xffffffffff);
+	return (((entry >> 12) & 0xffffffffff)<<12);
 }
 
 /*
@@ -399,3 +400,4 @@ void free_page(u64int vir_addr)
 {
 	
 }
+
