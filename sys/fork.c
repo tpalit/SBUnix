@@ -315,8 +315,11 @@ void setup_stack(task_struct* child_task)
 	}
 	/* Set up task parameters as per what IRETQ expects*/
 	child_task->kernel_stack[127] = 0x23;
-	/* The compiler will pop off stuff as it is returning from a syscall */
-	child_task->kernel_stack[126] = stack_vma->vm_end; 
+	/* 
+	 * The compiler will pop off stuff as it is returning from a syscall.
+	 * This includes the registers. @TODO - Shouldn't these be restored? Check later.
+	 */
+	child_task->kernel_stack[126] = 0xa00f28; 
 	child_task->kernel_stack[125] = DEFAULT_FLAGS;
 	child_task->kernel_stack[124] = 0x1b;
 	child_task->kernel_stack[123] = syscall_ret_address;
