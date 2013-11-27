@@ -1,21 +1,16 @@
 #include<stdio.h>
 #include<unistd.h>
 
+long int k = -2;
 int main(void)
 {
-	/*
-	int k = 0;
-	while(k<5) {
-		printf("Hi!!");
-		sleep(1);
-		k++;
-	}
-	printf("Done hi.c");
-	*/
 	if(fork()){
-		printf("In parent");
+		k++;
+		printf("In parent\n");
+
 	} else {
-		printf("In child");
+		printf("In child\n");
+		execvpe("bin/hello", NULL, NULL);
 	}
 	return 0;
 }

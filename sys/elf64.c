@@ -44,6 +44,27 @@ task_struct* make_process_from_elf(char* path)
 }
 
 /**
+ * This function will be invoked from the do_exec() system call.
+ * It will overlay the contents of the memory with the new binary 
+ * specified in the path varialble.
+ */
+int overlay_task(char* path, task_struct* overlayed_task)
+{
+	Elf64_Ehdr* ehdr = find_elf(path);
+	if(NULL != ehdr){
+		reinit_user_process(overlayed_task, (u64int)ehdr->e_entry);
+       		parse_load_elf_segments(ehdr, overlayed_task);	    
+		/*
+		allocate_heap(overlayed_task);
+		allocate_stack(overlayed_task);
+		*/
+		return SUCCESS;
+	} else {
+		return FAILURE;
+	}
+}
+
+/**
  * Find the Elf file specified by the path.
  */
 Elf64_Ehdr* find_elf(char* path) 

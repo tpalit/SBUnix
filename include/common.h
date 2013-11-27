@@ -22,6 +22,8 @@ void panic(char*);
 void dump_regs(void);
 
 #define KERN_VIR_START 0xffffffff80000000UL
+#define SUCCESS 0
+#define FAILURE 1
 
 #define NULL 0
 #endif

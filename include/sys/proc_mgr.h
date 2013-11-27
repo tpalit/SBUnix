@@ -130,4 +130,6 @@ void sleep(u32int);
 void create_kernel_process(task_struct*, u64int);
 void create_user_process(task_struct*, u64int);
 
+void reinit_user_process(task_struct*, u64int);
+
 #endif

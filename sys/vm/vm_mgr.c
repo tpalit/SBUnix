@@ -372,13 +372,17 @@ void map_phys_vir_pg(u64int phys_addr, u64int vir_addr)
 		pt_entry_ptr = pt_ptr+PT_OFFSET((u64int)vir_addr);
 		create_pt_e(pt_entry_ptr, 0x0, 0x0, 0x06, 0x0);
 	}
+	/*
 	if(is_present((u64int)*pt_entry_ptr)){
 		panic("Tried to map an already mapped page.");
 	} else {
+	*/
 		create_pt_e(pt_entry_ptr, 0x0, 0x0, 0x06, 0x0);
 		set_present(pt_entry_ptr);
 		set_base_addr(pt_entry_ptr, phys_addr);
+		/*
 	}
+		*/
 }
 
 /*

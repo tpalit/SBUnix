@@ -104,4 +104,6 @@ void allocate_heap(task_struct*);
 
 void allocate_stack(task_struct*);
 
+int overlay_task(char*, task_struct*);
+
 #endif

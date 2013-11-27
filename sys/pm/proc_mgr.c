@@ -599,3 +599,17 @@ void create_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 	/* Add to the ready list */
 	add_to_ready_list(task_struct_ptr);
 }
+
+/**
+ * Reinitialize basic task attributes on overlaying.
+ */
+void reinit_user_process(task_struct* task_struct_ptr, u64int function_ptr) 
+{
+	task_struct_ptr->kernel_stack[122] = function_ptr;
+	task_struct_ptr->time_slices = DEFAULT_TIME_SLICE;
+	task_struct_ptr->rip_register = function_ptr;
+	task_struct_ptr->rflags = DEFAULT_FLAGS;
+	task_struct_ptr->waiting_on = NULL;
+	task_struct_ptr->wait_time_slices = 0;
+	task_struct_ptr->vm_head = NULL;
+}

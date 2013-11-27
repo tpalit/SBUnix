@@ -9,6 +9,7 @@
 #include<sys/kstring.h>
 #include<stdio.h>
 #include<sys/fork.h>
+#include<sys/elf64.h>
 
 #define SYSCALL_NR 10
 
@@ -73,6 +74,12 @@ void do_sleep(u32int sleep_time)
     sleep(sleep_time);
 }
 
+int do_exec(char* file, char* argv[], char* envp[])
+{
+	overlay_task(file, CURRENT_TASK);
+	return SUCCESS;
+}
+
 /* Set up the system call table*/
 void* syscalls_tbl[SYSCALL_NR] = 
 {
@@ -81,7 +88,8 @@ void* syscalls_tbl[SYSCALL_NR] =
     do_malloc,/*   2 */
     do_exit,  /*   3 */
     do_sleep, /*   4 */
-    do_fork   /*   5 */
+    do_fork,  /*   5 */
+    do_exec   /*   6 */
 };
 
 /* 
