@@ -109,6 +109,7 @@ void isr_handler_body_14(void)
 		u64int fa_start_page = (u64int)faulting_address & 0xfffffffffffff000;
 		phys_vir_addr* page_ptr = get_free_phys_page();
 		kmemcpy((void*)page_ptr->vir_addr, (void*)fa_start_page, PAGE_SIZE);
+		/* Clearing the PTE */
 		create_pt_e(pte_entry, 0x0, 0x0, 0x06, 0x0);
 		set_base_addr(pte_entry, page_ptr->phys_addr);
 		set_present(pte_entry);

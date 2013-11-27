@@ -394,6 +394,9 @@ void schedule_on_timer(void)
 					     "movq %0, %%cr3\n\t"
 					     ::"r"(prev->cr3_register));
 			tss_entry.rsp0 = (u64int)&prev->kernel_stack[KERNEL_STACK_SIZE-1];
+			__asm__ __volatile__("mov $0x20, %al\n\t"
+					     "out %al, $0x20\n\t"
+					     "out %al, $0xA0\n\t");
 			__asm__ __volatile__(
 					     "popq %r15\n\t"
 					     "popq %r14\n\t"
@@ -410,10 +413,7 @@ void schedule_on_timer(void)
 					     "popq %rcx\n\t"
 					     "popq %rbx\n\t"
 					     "popq %rax\n\t");
-			__asm__ __volatile__("mov $0x20, %al\n\t"
-					     "out %al, $0x20\n\t"
-					     "out %al, $0xA0\n\t"
-					     "iretq\n\t");
+			__asm__ __volatile__("iretq\n\t");
 		} else {
 			prev = CURRENT_TASK;
 			next = READY_LIST;
@@ -433,6 +433,9 @@ void schedule_on_timer(void)
 					     "movq %0, %%cr3\n\t"
 					     ::"r"(next->cr3_register));			
 			tss_entry.rsp0 = (u64int)&next->kernel_stack[KERNEL_STACK_SIZE-1];
+			__asm__ __volatile__("mov $0x20, %al\n\t"
+					     "out %al, $0x20\n\t"
+					     "out %al, $0xA0\n\t");
 			__asm__ __volatile__(
 					     "popq %r15\n\t"
 					     "popq %r14\n\t"
@@ -449,10 +452,7 @@ void schedule_on_timer(void)
 					     "popq %rcx\n\t"
 					     "popq %rbx\n\t"
 					     "popq %rax\n\t");
-			__asm__ __volatile__("mov $0x20, %al\n\t"
-					     "out %al, $0x20\n\t"
-					     "out %al, $0xA0\n\t"
-					     "iretq\n\t");
+			__asm__ __volatile__("iretq\n\t");
 		}
 	} else {
 		/* 
@@ -463,9 +463,11 @@ void schedule_on_timer(void)
 		if (READY_LIST != NULL) {
 			CURRENT_TASK->time_slices--;
 		}
+		__asm__ __volatile__("pushq %rax\n\t");
 		__asm__ __volatile__("mov $0x20, %al\n\t"
 				     "out %al, $0x20\n\t"
 				     "out %al, $0xA0\n\t"
+				     "popq %rax\n\t"
 				     "iretq\n\t");		
 	}
 }
