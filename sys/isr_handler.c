@@ -88,14 +88,11 @@ void isr_handler_body_14(void)
 	u8int okay_to_map = 0;
 	__asm__ __volatile__("movq %%cr2, %[cr2_register]\n\t":[cr2_register]"=r"(faulting_address));
 	__asm__ __volatile__("movq %%r10, %[error_code]\n\t":[error_code]"=r"(error_code));
-	/* If the kernel faults or there's a fault in accessing a Present page, stop. */
-	kprintf("The faulting address = %p\n", faulting_address);
-	kprintf("The error code = %x\n", error_code);
 	
 	/* Get the PTE entry for the faulting address */
 	u64int* ptr = (u64int*)PT_ENTRY(faulting_address);
 	pt_e* pte_entry = ptr + PT_OFFSET(faulting_address); 
-	kprintf("*pte_entry = %p\n", *pte_entry);
+
 	if(is_supervisor(*pte_entry) || faulting_address >= KERN_VIR_START) {
 		/* Page fault in kernel. Panic */
 		dump_regs();
@@ -109,10 +106,12 @@ void isr_handler_body_14(void)
 		 * 3. Update the PTE entry to point to the new physical page.
 		 * 4. Unset cow and readonly.
 		 */
-		kmemcpy(backup_page, (void*)((u64int)faulting_address & 0xfffffffffffff000), PAGE_SIZE);
+		u64int fa_start_page = (u64int)faulting_address & 0xfffffffffffff000;
 		phys_vir_addr* page_ptr = get_free_phys_page();
+		kmemcpy((void*)page_ptr->vir_addr, (void*)fa_start_page, PAGE_SIZE);
+		create_pt_e(pte_entry, 0x0, 0x0, 0x06, 0x0);
 		set_base_addr(pte_entry, page_ptr->phys_addr);
-		kmemcpy((void*)((u64int)faulting_address & 0xfffffffffffff000), backup_page, PAGE_SIZE);
+		set_present(pte_entry);
 		unset_cow(pte_entry);
 		unset_readonly(pte_entry);
 	} else if (!is_present(*pte_entry)){
@@ -131,6 +130,9 @@ void isr_handler_body_14(void)
 			kmmap((void*)vma_to_map->vm_start, 
 			      vma_to_map->vm_end-vma_to_map->vm_start,
 			      0, 0, 0, 0);
+		} else {
+			dump_regs();
+			panic("SEGFAULT - shouldn't kill the kernel, though!");
 		}
 	} else {
 		dump_regs();

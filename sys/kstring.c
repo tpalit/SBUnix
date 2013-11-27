@@ -36,13 +36,11 @@ void kstrcpy(char *target, char *source)
 
 void* kmemcpy(void* dest, void* src, int count)
 {
-	char* dst1 = (char*)dest;
-        char* src1 = (char*)src;
-        while (count--) {
-		if (dst1 == (char*)0xa00f30) {
-			kprintf("Copied it!");
-		}
-		*dst1++ = *src1++;
+	int i = 0;
+	u8int* dest_ = (u8int*)dest;
+	u8int* src_ = (u8int*)src;
+	for(i=0; i<count; i++){
+		*(dest_+i) = *(src_+i);
         }
         return dest;
 }
