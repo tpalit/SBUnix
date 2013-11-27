@@ -1,0 +1,45 @@
+
+#include<sys/kstring.h>
+#include<common.h>
+
+int strcmp(char* str1, char* str2)
+{
+	int i=0,j=0,k=0;
+	while (str1[i]!='\0') {
+		i=i+1;
+	}
+	while (str2[j]!='\0') {
+		j=j+1;
+	}
+	if(i!=j) {
+		return 0;
+	} else	{
+		for(k=0;k<=i;k++) {
+			if(str1[k]!=str2[k]) {
+				return 0;
+			}
+		}
+		return 1;
+	}
+}
+
+void strcpy(char *target, char *source)
+{
+	while(*source)
+		{
+			*target = *source;
+			source++;
+			target++;
+		}
+	*target = '\0';
+}
+
+void* memcpy(void* dest, void* src, int count)
+{
+	char* dst1 = (char*)dest;
+        char* src1 = (char*)src;
+        while (count--) {
+		*dst1++ = *src1++;
+        }
+        return dest;
+}
