@@ -329,12 +329,15 @@ void setup_stack(task_struct* child_task)
 	child_task->kernel_stack[124] = 0x1b;
 	child_task->kernel_stack[123] = syscall_ret_address;
 	
-	/* Pretend that the GP registers and one function call is also on the stack 
-	 * %rax gets 0x0 by default. */
+	/* 
+	 * Copy the kernel stack where the context of the parent is saved.
+	 * But clobber $rax with 0x0
+	 */
 	int indx = 122;
-	for (; indx>108; indx--) {
-		child_task->kernel_stack[indx] = 0x0; 
+	for (; indx>109; indx--) {
+		child_task->kernel_stack[indx] = CURRENT_TASK->kernel_stack[indx-1]; 
 	}
+	child_task->kernel_stack[122] = 0x0;
 	child_task->rsp_register = (u64int)&child_task->kernel_stack[108];
 }
 

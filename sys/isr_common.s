@@ -162,9 +162,25 @@ _isr_handler_head_14:
 	push %rbp
 	push %rsi
 	push %rdi
+        pushq %r8
+        pushq %r9
+        pushq %r10
+        pushq %r11
+	pushq %r12
+	pushq %r13
+        pushq %r14
+	pushq %r15
 
 	call isr_handler_body_14
 
+	popq %r15
+        popq %r14
+        popq %r13
+        popq %r12
+        popq %r11
+        popq %r10
+        popq %r9
+        popq %r8
 	pop %rdi
 	pop %rsi
 	pop %rbp
