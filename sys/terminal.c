@@ -81,7 +81,7 @@ unsigned char kbdus1[128] =
     0,
 };
 #define BUFF_SIZE 100
-char buff[BUFF_SIZE];
+char buff[BUFF_SIZE]={NULL};
 unsigned int buffp=0;
 void buffer (unsigned int op, unsigned char key)
 {
@@ -92,16 +92,16 @@ void buffer (unsigned int op, unsigned char key)
         buff[buffp++]=key;
     }
     else if(op==3){
-        //make_process_from_elf(buff);
+        if(buff[0]!=NULL){
         kstrcpy(STDIN,buff);
         kprintf("\nenter pressed");
         buffp = 0;
-        writebuff=1; 
-        //kprintf("\n flag value %d",myflag);
-       // int i = 0;
-       // for(i = 0; i<BUFF_SIZE; i++) {
-        //    buff[i]=NULL; // clearing the buffer
-       // }
+        writebuff=1;
+        }
+        int i;
+       for(i = 0; i<BUFF_SIZE; i++) {
+            buff[i]=NULL; // clearing the buffer
+        }
     }
 }
 void terminal(unsigned char scancode)

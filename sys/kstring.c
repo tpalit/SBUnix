@@ -22,6 +22,35 @@ int kstrcmp(char* str1, char* str2)
 		return 1;
 	}
 }
+int kstrcmpsz(char * input,char * string){
+    while(* input){
+        if(*input!=*string){
+            return 0;
+        }
+        input++;
+        string++;
+    }
+    return 1;
+}
+void trim(char * t1, char *t2,char * t3){
+    while(*t1==*t2){
+        t1++;
+        t2++;
+    }
+    t2++;
+    kstrcpy(t3,t2);
+}
+void kstrcpysz(char *target, char *source,int size)
+{
+    int i;
+    kprintf("\nthe size is %d",size);
+    for(i=0;i<=size;i++){
+        *target = *source;
+        source++;
+        target++;
+    }
+    *target = '\0';
+}
 
 void kstrcpy(char *target, char *source)
 {
