@@ -13,15 +13,18 @@ void cleanbuffer(){
     }
 }
 
-int getbuffer(char *format) {
+int getbuffer(char *format,int fd,int size) {
 	register volatile u64int ret_val = 0;
 	/* Store the pointer in the rdx register. */
 	__asm__ __volatile__("movq %[s], %%rdx\n\t"
 			     :
 			     :[s]"m"(format));
-//	__asm__ __volatile__("movq %[i], %%rbx\n\t"
-//			     :
-//			     :[i]"m"(stdin_val));
+	__asm__ __volatile__("movq %[i], %%r8\n\t"
+			     :
+			     :[i]"m"(fd));
+	__asm__ __volatile__("movq %[size], %%r9\n\t"
+			     :
+			     :[size]"m"(size));
 	/* Store the system call index in the rax register. */
 	__asm__ __volatile__("movq $1, %rax\n\t");
 	__asm__("int $0x80\n\t");
@@ -72,14 +75,14 @@ static int scan(char **in, const char *fmt, va_list args) {
             switch (*p) {
                 case 's': {
                               char *dst = va_arg(args, char*);
-                              getbuffer(scandata);
+                              getbuffer(scandata,std_in,0);
                               strcpy(dst,scandata);
                               ++converted;
                           }
                           continue;
                case 'c': {
                               int dst;
-                              getbuffer(scandata);
+                              getbuffer(scandata,std_in,0);
                               dst=(int)scandata[0];
                               *va_arg(args, char*) = dst;
                               ++converted;
@@ -87,7 +90,7 @@ static int scan(char **in, const char *fmt, va_list args) {
                           continue;
                  case 'd': {
                               int dst=0;
-                              getbuffer(scandata);
+                              getbuffer(scandata,std_in,0);
                               dst=str2dec(scandata);
                               *va_arg(args, int*) = dst;
                               ++converted;
@@ -96,7 +99,7 @@ static int scan(char **in, const char *fmt, va_list args) {
              
                 case 'x': {
                               int dst=0;
-                              getbuffer(scandata);
+                              getbuffer(scandata,std_in,0);
                               dst=str2hex(scandata);
                               *va_arg(args, int*) = dst;
                               ++converted;
