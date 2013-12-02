@@ -170,9 +170,15 @@ _isr_handler_head_14:
 	pushq %r13
         pushq %r14
 	pushq %r15
-
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	
 	call isr_handler_body_14
 
+	popq %rdx
+	popq %rsi
+	popq %rdi
 	popq %r15
         popq %r14
         popq %r13

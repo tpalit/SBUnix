@@ -180,7 +180,8 @@ void remove_from_sleeping_list(task_struct* task_struct_ptr)
 		task_struct* prev_ptr = NULL;				\
 		while(sleeping_list_ptr != NULL){			\
 			sleeping_list_ptr->wait_time_slices--;		\
-			if (sleeping_list_ptr->wait_time_slices <=0){	\
+			if (sleeping_list_ptr->wait_time_slices <=0	\
+			    && sleeping_list_ptr->waiton_chld_exit == 0){ \
 				/* To remove */				\
 				ready_task = sleeping_list_ptr;		\
 				ready_task->wait_time_slices = 0;	\
@@ -224,7 +225,10 @@ void schedule()
 			     "pushq %r12\n\t"
 			     "pushq %r13\n\t"
 			     "pushq %r14\n\t"
-			     "pushq %r15\n\t");
+			     "pushq %r15\n\t"
+			     "pushq %rdi\n\t"
+			     "pushq %rsi\n\t"
+			     "pushq %rdx\n\t");
 
 	__asm__ __volatile__("movq %%rsp, %[old_rsp]": [old_rsp] "=r"(old_rsp));
 	ticks++; /* Global variable */
@@ -251,7 +255,11 @@ void schedule()
 					     "movq %0, %%cr3\n\t"
 					     ::"r"(prev->cr3_register));
 			tss_entry.rsp0 = (u64int)&prev->kernel_stack[KERNEL_STACK_SIZE-1];
-			__asm__ __volatile__("popq %r15\n\t"
+			__asm__ __volatile__(
+					     "popq %rdx\n\t"
+					     "popq %rsi\n\t"
+					     "popq %rdi\n\t"
+					     "popq %r15\n\t"
 					     "popq %r14\n\t"
 					     "popq %r13\n\t"
 					     "popq %r12\n\t"
@@ -299,6 +307,9 @@ void schedule()
 					     ::"r"(next->cr3_register));			
 			tss_entry.rsp0 = (u64int)&next->kernel_stack[KERNEL_STACK_SIZE-1];
 			__asm__ __volatile__(
+					     "popq %rdx\n\t"
+					     "popq %rsi\n\t"
+					     "popq %rdi\n\t"
 					     "popq %r15\n\t"
 					     "popq %r14\n\t"
 					     "popq %r13\n\t"
@@ -367,7 +378,10 @@ void schedule_on_timer(void)
 				     "pushq %r12\n\t"
 				     "pushq %r13\n\t"
 				     "pushq %r14\n\t"
-				     "pushq %r15\n\t");
+				     "pushq %r15\n\t"
+				     "pushq %rdi\n\t"
+				     "pushq %rsi\n\t"
+				     "pushq %rdx\n\t");
 		__asm__ __volatile__("movq %%rsp, %[old_rsp]": [old_rsp] "=r"(old_rsp));
 
 		ticks++; /* Global variable */
@@ -398,6 +412,9 @@ void schedule_on_timer(void)
 					     "out %al, $0x20\n\t"
 					     "out %al, $0xA0\n\t");
 			__asm__ __volatile__(
+					     "popq %rdx\n\t"
+					     "popq %rsi\n\t"
+					     "popq %rdi\n\t"
 					     "popq %r15\n\t"
 					     "popq %r14\n\t"
 					     "popq %r13\n\t"
@@ -437,6 +454,9 @@ void schedule_on_timer(void)
 					     "out %al, $0x20\n\t"
 					     "out %al, $0xA0\n\t");
 			__asm__ __volatile__(
+					     "popq %rdx\n\t"
+					     "popq %rsi\n\t"
+					     "popq %rdi\n\t"
 					     "popq %r15\n\t"
 					     "popq %r14\n\t"
 					     "popq %r13\n\t"
@@ -479,6 +499,9 @@ void schedule_on_timer(void)
 void exit(void)
 {
 	current_inactive = 1; /* Don't add CURRENT_TASK back to READY_LIST in schedule() */
+	if(CURRENT_TASK->parent_task != NULL){
+		CURRENT_TASK->parent_task->waiton_chld_exit = 0; /* @TODO - handle for more children */
+	}
 	add_to_zombie_list(CURRENT_TASK);
 	schedule();
 }
@@ -495,6 +518,14 @@ void sleep(u32int sleep_slices)
 	schedule();
 }
 
+void wait(void)
+{
+	current_inactive = 1;
+	add_to_sleeping_list(CURRENT_TASK, NULL);
+	/* @TODO - Handle for all children */
+	CURRENT_TASK->waiton_chld_exit = 1;
+	schedule();
+}
 /**
  * Sets up the kernel process. This includes, setting up the kernel to 
  * something that the timer_interrupt expects - rip, cs, rflags, rsp and ss. 
@@ -510,10 +541,10 @@ void create_kernel_process(task_struct* task_struct_ptr, u64int function_ptr)
 
 	/* Pretend that the GP registers and one function call is also on the stack */
 	int indx = 122;
-	for (; indx>108; indx--) {
+	for (; indx>105; indx--) {
 		task_struct_ptr->kernel_stack[indx] = 0x0;
 	}
-	task_struct_ptr->rsp_register = (u64int)&task_struct_ptr->kernel_stack[108];
+	task_struct_ptr->rsp_register = (u64int)&task_struct_ptr->kernel_stack[105];
 
 	task_struct_ptr->rip_register = function_ptr;
 	task_struct_ptr->time_slices = DEFAULT_TIME_SLICE;
@@ -523,6 +554,7 @@ void create_kernel_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->pid = PROC_ID_TOP++;
 	task_struct_ptr->vm_head = NULL;
 	task_struct_ptr->waiting_on = NULL;
+	task_struct_ptr->waiton_chld_exit = 0;
 	task_struct_ptr->wait_time_slices = 0;
 	task_struct_ptr->parent_task = NULL;
 	/* Set up the process address space */
@@ -546,6 +578,7 @@ void create_kernel_process(task_struct* task_struct_ptr, u64int function_ptr)
 	cr3_reg process_cr3;
 	create_cr3_reg(&process_cr3, (u64int)page_addr->phys_addr, 0x00, 0x00);
 	task_struct_ptr->cr3_register = process_cr3;
+
 	/* Add to the ready list */
 	add_to_ready_list(task_struct_ptr);
 }
@@ -561,11 +594,11 @@ void create_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 
 	/* Pretend that the GP registers and one function call is also on the stack */
 	int indx = 122;
-	for (; indx>108; indx--) {
+	for (; indx>105; indx--) {
 		task_struct_ptr->kernel_stack[indx] = 0x0;
 	}
 	task_struct_ptr->time_slices = DEFAULT_TIME_SLICE;
-	task_struct_ptr->rsp_register = (u64int)&task_struct_ptr->kernel_stack[108];
+	task_struct_ptr->rsp_register = (u64int)&task_struct_ptr->kernel_stack[105];
 	task_struct_ptr->rip_register = function_ptr;
 	task_struct_ptr->rflags = 0x20202;
 	task_struct_ptr->next = NULL;
@@ -575,6 +608,7 @@ void create_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->vm_head = NULL;
 	task_struct_ptr->waiting_on = NULL;
 	task_struct_ptr->wait_time_slices = 0;
+	task_struct_ptr->waiton_chld_exit = 0;
 	/* Set up the process address space */
 	/* This has to be aligned on 0x1000 boundaries and need the physical address */
 	phys_vir_addr* page_addr = get_free_phys_page();
@@ -610,6 +644,7 @@ void reinit_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->rip_register = function_ptr;
 	task_struct_ptr->rflags = DEFAULT_FLAGS;
 	task_struct_ptr->waiting_on = NULL;
+	task_struct_ptr->waiton_chld_exit = 0;
 	task_struct_ptr->wait_time_slices = 0;
 	task_struct_ptr->vm_head = NULL;
 }

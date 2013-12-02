@@ -90,6 +90,7 @@ u64int find_vir_addr_from_cache(u64int phys_addr)
 u64int do_fork(void)
 {
 	task_struct* child_task_ptr = create_blank_process();
+	child_task_ptr->parent_task = CURRENT_TASK;
 	copy_paging_structures(CURRENT_TASK, child_task_ptr);
 	copy_vmas(CURRENT_TASK, child_task_ptr);
 	setup_stack(child_task_ptr);
@@ -112,11 +113,11 @@ task_struct* create_blank_process(void)
 
 	/* Pretend that the GP registers and one function call is also on the stack */
 	int indx = 122;
-	for (; indx>108; indx--) {
+	for (; indx>105; indx--) {
 		child_task->kernel_stack[indx] = 0x0;
 	}
 	child_task->time_slices = DEFAULT_TIME_SLICE;
-	child_task->rsp_register = (u64int)&child_task->kernel_stack[108];
+	child_task->rsp_register = (u64int)&child_task->kernel_stack[105];
 	child_task->rip_register = BAD_ADDRESS;
 	child_task->rflags = DEFAULT_FLAGS;
 	child_task->next = NULL;
@@ -334,10 +335,10 @@ void setup_stack(task_struct* child_task)
 	 * But clobber $rax with 0x0
 	 */
 	int indx = 122;
-	for (; indx>109; indx--) {
-		child_task->kernel_stack[indx] = CURRENT_TASK->kernel_stack[indx-1]; 
+	for (; indx>106; indx--) {
+		child_task->kernel_stack[indx] = CURRENT_TASK->kernel_stack[indx-2]; 
 	}
 	child_task->kernel_stack[122] = 0x0;
-	child_task->rsp_register = (u64int)&child_task->kernel_stack[108];
+	child_task->rsp_register = (u64int)&child_task->kernel_stack[105];
 }
 

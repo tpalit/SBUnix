@@ -8,8 +8,13 @@ int main(void)
 	if(fork()){
 		k++;
 		printf("In parent\n");
+		wait();
+		printf("Done waiting\n");
 	} else {
-		printf("In child\n");
+		int i = 0;
+		for(i=0; i<10; i++){
+			printf("In child\n");
+		}
        		execvpe("bin/hey", NULL, NULL);
 	}
 	return 0;

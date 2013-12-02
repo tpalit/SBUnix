@@ -140,27 +140,37 @@ void do_sleep(u32int sleep_time)
     sleep(sleep_time);
 }
 
+/**
+ * Switch out the memory space of the task with the
+ * new task details.
+ */
 int do_exec(char* file, char* argv[], char* envp[])
 {
 	overlay_task(file, CURRENT_TASK);
 	return SUCCESS;
 }
 
+void do_wait()
+{
+	wait();
+}
+
 /* Set up the system call table*/
 void* syscalls_tbl[SYSCALL_NR] =
 {
-    do_write, /*   0 */
-    do_read,  /*   1 */
-    do_malloc,/*   2 */
-    do_exit,  /*   3 */
-    do_sleep, /*   4 */
-    do_fork,   /*   5 */
-    do_open,  /*   6  */
-    do_close,  /*  7  */
-    do_opendir, /*  8  */
-    do_closedir, /*  9  */
-    do_readdir,  /*  10  */
-    do_exec  /* 11 */
+    do_write,             /*   0 */
+    do_read,              /*   1 */
+    do_malloc,            /*   2 */
+    do_exit,              /*   3 */
+    do_sleep,             /*   4 */
+    do_fork,              /*   5 */
+    do_open,              /*   6 */
+    do_close,             /*   7 */
+    do_opendir,           /*   8 */
+    do_closedir,          /*   9 */
+    do_readdir,           /*   10 */
+    do_exec,              /*   11 */
+    do_wait               /*   12 */
 };
 
 /*
