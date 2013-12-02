@@ -179,7 +179,9 @@ void remove_from_sleeping_list(task_struct* task_struct_ptr)
 		task_struct* ready_task = NULL;				\
 		task_struct* prev_ptr = NULL;				\
 		while(sleeping_list_ptr != NULL){			\
-			sleeping_list_ptr->wait_time_slices--;		\
+			if(sleeping_list_ptr->wait_time_slices > 0) {	\
+				sleeping_list_ptr->wait_time_slices--;	\
+			}						\
 			if (sleeping_list_ptr->wait_time_slices <=0	\
 			    && sleeping_list_ptr->waiton_chld_exit == 0){ \
 				/* To remove */				\

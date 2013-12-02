@@ -43,7 +43,6 @@ int do_read(char* s,int i,int bsize)
             if(writebuff!=0)
                 break;
         }
-        kprintf("finally %s",STDIN);
         kstrcpy(s,STDIN);
     }
     else{
@@ -152,6 +151,7 @@ int do_exec(char* file, char* argv[], char* envp[])
 
 void do_wait()
 {
+	CURRENT_TASK->rsp_register = syscalling_task_rsp;
 	wait();
 }
 

@@ -1,16 +1,18 @@
 #include<stdio.h>
 #include<unistd.h>
+char buffer[100];
+
 int main(void)
 {
-	volatile int cond = 1;
-	while(cond) {
-		//		printf("Going to fork again!");
-		if(fork()){
-			printf("In parent\n");
-			wait();
-			printf("Done waiting\n");
+	while(1) {
+		printf(" \n");
+		printf("sh$ ");
+		scanf("%s", buffer);
+		printf(" \n");
+		if(fork()==0){
+			execvpe(buffer, NULL, NULL);
 		} else {
-			execvpe("bin/hey", NULL, NULL);
+			wait();
 		}
 	}
 	return 0;

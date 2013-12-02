@@ -94,7 +94,6 @@ void buffer (unsigned int op, unsigned char key)
     else if(op==3){
         if(buff[0]!=NULL){
         kstrcpy(STDIN,buff);
-        kprintf("\nenter pressed");
         buffp = 0;
         writebuff=1;
         }
