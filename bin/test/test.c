@@ -3,6 +3,6 @@
 
 int main(void)
 {
-	execvpe("bin/hello", NULL, NULL);
+	execvpe("bin/hey", NULL, NULL);
 	return 0;
 }

@@ -195,8 +195,8 @@ void syscall_handler(void)
     u64int rax;
     __asm__ __volatile__ ("movq %%rax, %0":"=r"(rax));
     __asm__ __volatile__("movq %%rsp, %[old_rsp]\n\t": [old_rsp] "=r"(syscalling_task_rsp));
-    __asm__ __volatile__("movq 120(%%rsp), %[ret_addr]\n\t":[ret_addr] "=r"(syscall_ret_address) );
-    __asm__ __volatile__("movq 144(%%rsp), %[ustck_addr]\n\t":[ustck_addr] "=r"(syscalling_task_user_rsp) );
+    __asm__ __volatile__("movq 144(%%rsp), %[ret_addr]\n\t":[ret_addr] "=r"(syscall_ret_address) );
+    __asm__ __volatile__("movq 168(%%rsp), %[ustck_addr]\n\t":[ustck_addr] "=r"(syscalling_task_user_rsp) );
     /*
     __asm__ __volatile__ ("movq %%rax, %[rax]\n\t"
 			  "movq %%rsp, %[old_rsp]\n\t"
