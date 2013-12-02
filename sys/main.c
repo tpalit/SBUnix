@@ -13,7 +13,7 @@
 #include<sys/kmalloc.h>
 #include<sys/proc_mgr.h>
 #include<sys/elf64.h>
-
+#include<sys/dir.h>
 #define LOW_MEM 0
 #define HI_MEM 1
 
@@ -59,8 +59,17 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
        	initialize_tss();
 	kprintf("Initializing idle process ... \n");
 	start_idle_process(); /* Process 0 */
-      	make_process_from_elf("bin/hi"); 
-	/*
+	make_process_from_elf("bin/hello");
+      //  posix_header_ustar* ptr=find_dir("bin/folder");
+       // char * ptr1;
+      // while(1);
+       // kprintf("\nthe value of pointer is:\nname %s\nmode %s\nuid %s\ngid %s\nsize %s\nmtime %s\nchecksum %s\ntypeflag %s\nlinkname %s\nversion %s\nuname",ptr->name,ptr->mode,ptr->uid,
+       // ptr->gid,ptr->size,ptr->mtime,ptr->checksum,ptr->typeflag,ptr->linkname,ptr->version,ptr->uname); 
+      //  ptr1=(char*)(ptr+1);
+       // kprintf("the value of pointer is: %s\n",ptr1); 
+        //kprintf("the value of pointer is: %s\n",(ptr1+10)); 
+      // while(1);
+        /*
        	make_process_from_elf("bin/hello");
 	make_process_from_elf("bin/test");
 	*/
@@ -72,7 +81,7 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
 void boot(void)
 {
 	// note: function changes rsp, local stack variables can't be practically used
-	volatile register char *rsp asm ("rsp");
+	volatile register char *rsp __asm__ ("rsp");
 	char* temp1, *temp2;
 	loader_stack = (uint32_t*)rsp;
 	rsp = &stack[INITIAL_STACK_SIZE];

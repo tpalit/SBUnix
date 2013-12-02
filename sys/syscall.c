@@ -15,7 +15,6 @@
 #define SYSCALL_NR 15
 
 
-
 extern task_struct* CURRENT_TASK;
 
 /* Need to save the rsp. Would've been easier if we had pushed and popped rsp */
@@ -33,8 +32,6 @@ int do_write(char* s)
 int do_read(char* s,int i,int bsize)
 {
     char * ptr=NULL;
-    kprintf("the size is %d",bsize);
-    kprintf("thr value of i is %d",i);
     int o = 0;
     if(i==0){
         for(o =0 ;o<100;o++) {
@@ -162,7 +159,8 @@ void* syscalls_tbl[SYSCALL_NR] =
     do_close,  /*  7  */
     do_opendir, /*  8  */
     do_closedir, /*  9  */
-    do_readdir  /*  10  */
+    do_readdir,  /*  10  */
+    do_exec  /* 11 */
 };
 
 /*

@@ -13,7 +13,7 @@
  */
 void outb(u16int port, u8int val)
 {
-	asm volatile("outb %0, %1"
+	__asm__ __volatile__("outb %0, %1"
 		     : : "a"(val), "Nd"(port));
 }
 
