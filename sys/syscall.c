@@ -14,7 +14,7 @@
 #include<sys/tarfs.h>
 #define SYSCALL_NR 15
 
-#define SYSCALL_NR 10
+
 
 extern task_struct* CURRENT_TASK;
 
@@ -76,7 +76,7 @@ int do_close(int i)
     return result;
 }
 int do_opendir(char *s){
-    int result; 
+    int result;
     result = find_dir(s);
     return result;
 }
@@ -102,7 +102,7 @@ int do_readdir(char *s,int dird)
             ptr = ptr + size;
         }
         if(kstrcmpsz(i->dir_path,ptr->name))
-        { 
+        {
             trim(i->dir_path,ptr->name,s);
             i->count++;
             return 0;
@@ -112,7 +112,7 @@ int do_readdir(char *s,int dird)
     return -1;
 }
 int do_closedir(int dird){
-    return close_dird(dird); 
+    return close_dird(dird);
 }
 int do_malloc(u32int mem_size)
 {
@@ -150,7 +150,7 @@ int do_exec(char* file, char* argv[], char* envp[])
 }
 
 /* Set up the system call table*/
-void* syscalls_tbl[SYSCALL_NR] = 
+void* syscalls_tbl[SYSCALL_NR] =
 {
     do_write, /*   0 */
     do_read,  /*   1 */
@@ -165,18 +165,18 @@ void* syscalls_tbl[SYSCALL_NR] =
     do_readdir  /*  10  */
 };
 
-/* 
+/*
  * The handler for the int 80h.
  */
 void syscall_handler(void)
 {
-    /* 
-     * The syscall number is in rax. 
+    /*
+     * The syscall number is in rax.
      * The result will also be in the rax.
      * So don't pop back rax.
      */
     __asm__ __volatile__(
-            "pushq %rax\n\t" 
+            "pushq %rax\n\t"
             "pushq %rbx\n\t"
             "pushq %rcx\n\t"
             "pushq %rdx\n\t"
