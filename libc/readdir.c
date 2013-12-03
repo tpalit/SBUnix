@@ -24,7 +24,7 @@ int getfilename(char *format,u64int fd) {
 }
 
 int readdir(char *target,int fd){
-    char buffer[100];
+    char buffer[100]={NULL};
     getfilename(buffer,fd);
     strcpy(target,buffer);
     return 0;

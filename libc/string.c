@@ -43,3 +43,31 @@ void* memcpy(void* dest, void* src, int count)
         }
         return dest;
 }
+void trimpath(char *t1)
+{
+    while(*t1)
+        t1++;
+    while(*t1!='/')
+    {
+        *t1=NULL;
+        t1--;
+    }
+    *t1=NULL;
+
+}
+void addpath(char * t1,char * t2)
+{
+    while(*t1)
+    {t1++;}
+    *t1='/';
+
+    t1++;
+    while(*t2)
+    {
+
+        *t1=*t2;
+        t1++;
+        t2++;
+    }
+    *t1='\0';
+}

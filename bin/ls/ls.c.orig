@@ -1,0 +1,25 @@
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<file.h>
+#define buffsize 15
+int main(int argc, char* argv[], char* envp[])
+{
+    /* LS will get a dir descriptor and will then call readdir recursively to print the file 
+     * the shell will get the dir descriptor from cd 
+     * for now i am opening a file here and printing its contents*/
+    int i;
+    int f = opendir("filesystem");
+    char buff[buffsize];
+    readdir(buff,f);
+    printf("\n%s",buff);
+    while(buff[0]!=NULL){
+        for (i=0;i<buffsize;i++){
+            buff[i]=NULL;
+        }
+        readdir(buff,f);
+        printf("\n%s",buff);
+    }
+    return 0;
+}
