@@ -2,6 +2,15 @@
 #include<common.h>
 #include<stdio.h>
 
+int kstrlen(char* str)
+{
+	int length = 0;
+	while (*str++ != '\0'){
+		length++;
+	}
+	return length;
+}
+
 int kstrcmp(char* str1, char* str2)
 {
 	int i=0,j=0,k=0;

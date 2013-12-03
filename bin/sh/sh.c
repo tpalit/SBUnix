@@ -2,6 +2,9 @@
 #include<unistd.h>
 char buffer[100];
 
+char* argp[] = {"Tapti", "Palit", "Ganesh"};
+char* envp[] = {"Hello", "World"};
+
 int main(void)
 {
 	while(1) {
@@ -10,7 +13,7 @@ int main(void)
 		scanf("%s", buffer);
 		printf(" \n");
 		if(fork()==0){
-			execvpe(buffer, NULL, NULL);
+			execvpe(buffer, argp, envp);
 		} else {
 			wait();
 		}

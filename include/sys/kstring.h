@@ -7,6 +7,8 @@ void kstrcpy(char*, char*);
 void trim(char*, char*,char*);
 void kstrcpysz(char*, char*,int);
 void* kmemcpy(void*, void*, int);
+int kstrlen(char*);
+
 int strcmp(char*, char*);
 void strcpy(char*, char*);
 void* memcpy(void*, void*, int);
