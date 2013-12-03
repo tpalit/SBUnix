@@ -22,10 +22,10 @@ all: $(USER).iso $(USER).img
 
 $(USER).iso: kernel
 	cp kernel $(ROOTBOOT)/kernel/kernel
-	mkisofs -r -no-emul-boot -input-charset utf-8 -b boot/cdboot -o $@ $(ROOTFS)/
+	/home/facfs1/mferdman/cse506-tools/bin/mkisofs -r -no-emul-boot -input-charset utf-8 -b boot/cdboot -o $@ $(ROOTFS)/
 
 $(USER).img:
-	qemu-img create -f raw $@ 16M
+	/home/facfs1/mferdman/cse506-tools/bin/qemu-img create -f raw $@ 16M
 
 kernel: $(patsubst %.s,obj/%.asm.o,$(KERN_SRCS:%.c=obj/%.o)) obj/tarfs.o
 	$(LD) $(LDLAGS) -o $@ -T linker.script $^
