@@ -4,6 +4,8 @@
 int kstrcmp(char*, char*);
 int kstrcmpsz(char*, char*);
 void kstrcpy(char*, char*);
+void trimpath(char*);
+void addpath(char*, char*);
 void trim(char*, char*,char*);
 void kstrcpysz(char*, char*,int);
 void* kmemcpy(void*, void*, int);

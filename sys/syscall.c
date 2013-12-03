@@ -79,6 +79,7 @@ int do_opendir(char *s){
 int do_readdir(char *s,int dird)
 {
     int c,k,byte_size,size;
+    char b[30],temp[30];
     dir_ptr *i;
     posix_header_ustar *ptr;
     i=read_dir(dird);
@@ -91,11 +92,22 @@ int do_readdir(char *s,int dird)
     }
     else{
         for (k=0;k<c;k++){
+            trim(i->dir_path,ptr->name,temp);
             byte_size = tarfs_atoi(ptr->size,8) + sizeof(posix_header_ustar); // size in bytes
             size = byte_size/sizeof(posix_header_ustar);
             if (byte_size%sizeof(posix_header_ustar) != 0)
                 size++;
             ptr = ptr + size;
+            trim(i->dir_path,ptr->name,b);
+            while(kstrcmp(b,temp)){
+            byte_size = tarfs_atoi(ptr->size,8) + sizeof(posix_header_ustar); // size in bytes
+            size = byte_size/sizeof(posix_header_ustar);
+            if (byte_size%sizeof(posix_header_ustar) != 0)
+                size++;
+            ptr = ptr + size;
+            trim(i->dir_path,ptr->name,b);
+            
+            }
         }
         if(kstrcmpsz(i->dir_path,ptr->name))
         {

@@ -12,7 +12,7 @@ int main(int argc, char* argv[], char* envp[])
      * then on .. we need to trim the arguments back.
      * then we need to make a opendir call for every cd operation 
      * the opendir system call takes care that multiple dir descriptors are not assigned for the same query*/
-    char buff[buffsize];//this should get the arguments
+    char buff[buffsize]={NULL};//this should get the arguments
     char path[pathlength];
     if(buff[0]=='/')
     {
