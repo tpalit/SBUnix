@@ -7,7 +7,7 @@
  */
 #include<sys/timer.h>
 #include<common.h>
-#include<stdio.h>
+#include<sys/kstdio.h>
 #include<sys/proc_mgr.h>
 #include<sys/pm_mgr.h>
 #include<sys/vm_mgr.h>
@@ -132,8 +132,12 @@ void isr_handler_body_14(void)
 			      vma_to_map->vm_end-vma_to_map->vm_start,
 			      0, 0, 0, 0);
 		} else {
+			/*
 			dump_regs();
 			panic("SEGFAULT - shouldn't kill the kernel, though!");
+			*/
+			kprintf("SEGFAULT - Process killed!\n");
+			exit();
 		}
 	} else {
 		dump_regs();
