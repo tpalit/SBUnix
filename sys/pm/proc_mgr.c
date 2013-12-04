@@ -648,5 +648,24 @@ void reinit_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->waiting_on = NULL;
 	task_struct_ptr->waiton_chld_exit = 0;
 	task_struct_ptr->wait_time_slices = 0;
-	task_struct_ptr->vm_head = NULL;
+	/* Don't copy the CODE or DATA vmas as they'll be reloaded. */
+	vm_struct* vm_ptr = task_struct_ptr->vm_head;
+	vm_struct* vm_new_ptr = NULL;
+	while(vm_ptr != NULL){
+		if (vm_ptr->vm_type != CODE_VMA &&
+		    vm_ptr->vm_type != DATA_VMA){
+			vm_struct* new_vm = (vm_struct*)kmalloc(sizeof(vm_struct));
+			new_vm->vm_type = vm_ptr->vm_type;
+			new_vm->vm_start = vm_ptr->vm_start;
+			new_vm->vm_end = vm_ptr->vm_end;
+			new_vm->vm_next = vm_ptr->vm_next;
+			if (vm_new_ptr != NULL){
+				vm_new_ptr->vm_next = new_vm;
+			} else {
+				vm_new_ptr = new_vm;
+			}
+		}
+		vm_ptr = vm_ptr->vm_next;
+	}
+	
 }
