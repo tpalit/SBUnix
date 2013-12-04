@@ -5,6 +5,7 @@
 #ifndef _STDIO_H
 #define _STDIO_H
 
+#include<common.h>
 
 #define ZERO 0
 #define std_in 0
@@ -13,5 +14,9 @@
 
 int scanf(const char *format, ...);
 int printf(const char *format, ...);
+
+void putchar(const char);
+void putint(s32int, int);
+void puts(const char*);
 
 #endif

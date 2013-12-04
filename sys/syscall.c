@@ -25,12 +25,13 @@ u64int syscalling_task_user_rsp; /* the user stack */
 /* These will get invoked in kernel mode. */
 int do_write(char* s)
 {
-    kprintf(s);
-    return 0;
+	kprintf(s);
+	return 0;
 }
 
 int do_read(char* s,int i,int bsize)
 {
+	/* @TODO - Incorrect way of doing a read() */
     char * ptr=NULL;
     int o = 0;
     if(i==0){

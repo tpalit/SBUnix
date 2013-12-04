@@ -55,22 +55,19 @@ void trimpath(char *t1)
     *t1=NULL;
 
 }
-void addpath(char * t1,char * t2)
+void form_full_path(char* full_path, char * t1,char * t2)
 {
-    while(*t1)
-    {t1++;}
-    *t1='/';
-
-    t1++;
-    while(*t2)
-    {
-
-        *t1=*t2;
-        t1++;
-        t2++;
+    while(*t1) {
+	    *full_path++ = *t1++;
     }
-    *t1='\0';
+    *full_path++='/';
+
+    while(*t2) {
+	    *full_path++ = *t2++;
+    }
+    *full_path='\0';
 }
+
 void trimspaces(char * t1){
     char * temp;
     temp=t1;

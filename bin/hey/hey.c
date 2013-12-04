@@ -4,6 +4,6 @@
 
 int main(int argc, char* argv[], char* envp[])
 {
-	printf("Such is life!%s\n", argv[0]);
+	printf("Such is life!\n");
 	return 0;
 }

@@ -2,7 +2,7 @@
 #ifndef _STRING_H
 #define _STRING_H
 void trimpath(char*);
-void addpath(char*, char*);
+void form_full_path(char*, char*, char*);
 int strcmp(char*, char*);
 void strcpy(char*, char*);
 void* memcpy(void*, void*, int);
