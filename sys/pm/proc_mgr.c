@@ -667,11 +667,13 @@ void reinit_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 			}
 		} else {
 			/* Remove the virtual page mappings */
+			/*
 			u64int addr = 0x0;
 			for(addr = vm_ptr->vm_start; addr <= vm_ptr->vm_end; addr+=PAGE_SIZE){
 				pt_e* pt_entry = (pt_e*)PT_ENTRY(addr);
 				unset_present(pt_entry);
 			}
+			*/
 		}
 		vm_ptr = vm_ptr->vm_next;
 	}

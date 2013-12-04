@@ -4,9 +4,6 @@
 
 int main(int argc, char* argv[], char* envp[])
 {
-	while(1){
-		sleep(10);
-		printf("hey! ");
-	}
+	printf("Such is life!%s\n", argv[0]);
 	return 0;
 }

@@ -155,12 +155,9 @@ void do_sleep(u32int sleep_time)
  * Switch out the memory space of the task with the
  * new task details.
  */
-int do_exec(char* file, char* argv[], char* envp[])
+int do_exec(char* file, char** argv, char** envp)
 {
-	/* Copy the argv -- @TODO - only the first being copied now. */
 	overlay_task(file, CURRENT_TASK);
-
-	
 	return SUCCESS;
 }
 
