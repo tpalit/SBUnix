@@ -2,7 +2,7 @@
 #include<sys/kmalloc.h>
 #include<sys/vm_mgr.h>
 #include<sys/proc_mgr.h>
-#include<stdio.h>
+#include<sys/kstdio.h>
 
 extern task_struct* CURRENT_TASK;
 extern u32int PROC_ID_TOP;

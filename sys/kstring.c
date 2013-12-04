@@ -1,6 +1,6 @@
 #include<sys/kstring.h>
 #include<common.h>
-#include<stdio.h>
+#include<sys/kstdio.h>
 
 int kstrlen(char* str)
 {

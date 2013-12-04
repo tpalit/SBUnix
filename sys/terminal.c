@@ -1,4 +1,4 @@
-#include<stdio.h>
+#include<sys/kstdio.h>
 #include<sys/elf64.h>
 #include<sys/kstring.h>
 unsigned char kbdus[128] =

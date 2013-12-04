@@ -1,5 +1,5 @@
 #include<common.h>
-#include<stdio.h>
+#include<sys/kstdio.h>
 /*
  * This file will contain the common routines which 
  * will be required all over the world. 
