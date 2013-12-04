@@ -138,6 +138,7 @@ int add_dird(char* path,posix_header_ustar * ptr)
     int i;
     dir_ptr* tempptr = dirdeshead;
     dir_ptr* newdes =NULL;
+    dir_ptr* temp = NULL;
     if(tempptr==NULL)
     {
 
@@ -157,6 +158,7 @@ int add_dird(char* path,posix_header_ustar * ptr)
             return tempptr->dr_number;
         }
         i++;
+        temp=tempptr;
         tempptr=tempptr->next;
     }
     if(i==32){
@@ -164,11 +166,12 @@ int add_dird(char* path,posix_header_ustar * ptr)
     }
     newdes = (dir_ptr*)kmalloc(sizeof(dir_ptr));
 
-    newdes->dr_number=tempptr->dr_number+1;
+    newdes->dr_number=temp->dr_number+1;
     kstrcpy(newdes->dir_path,path);
     newdes->dir_entry=ptr;
     newdes->next=NULL;
-    tempptr->next=newdes;
+    newdes->count=0;
+    temp->next=newdes;
     return newdes->dr_number;
 }
 int add_des(char* path,char * ptr)
@@ -176,6 +179,7 @@ int add_des(char* path,char * ptr)
     int i;
     file_des* tempptr = deshead;
     file_des* newdes =NULL;
+    file_des* temp =NULL;
     if(tempptr==NULL)
     {
 
@@ -193,6 +197,7 @@ int add_des(char* path,char * ptr)
             return tempptr->fd_number;
         }
         i++;
+        temp=tempptr;
         tempptr=tempptr->next;
     }
     if(i==32){
@@ -200,11 +205,11 @@ int add_des(char* path,char * ptr)
     }
     newdes = (file_des*)kmalloc(sizeof(file_des));
 
-    newdes->fd_number=tempptr->fd_number+1;
+    newdes->fd_number=temp->fd_number+1;
     kstrcpy(newdes->file_path,path);
     newdes->file_pointer=ptr;
     newdes->next=NULL;
-    tempptr->next=newdes;
+    temp->next=newdes;
     return newdes->fd_number;
 }
 void clean_fd(){

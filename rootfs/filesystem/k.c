@@ -1,3 +1,4 @@
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<unistd.h>
@@ -16,7 +17,7 @@ int main(int argc, char* argv[], char* envp[])
         readdir(buff,f);
         printf("\n %s",buff);
         closedir(f);
-        f=opendir("bin/ls");
+        f=opendir("bin/hello");
 	printf("\n file des=%d",f);
 
 //	while(k<5) {

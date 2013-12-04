@@ -1,5 +1,5 @@
 
-#include<sys/kstring.h>
+#include<string.h>
 #include<common.h>
 
 int strcmp(char* str1, char* str2)
@@ -70,4 +70,37 @@ void addpath(char * t1,char * t2)
         t2++;
     }
     *t1='\0';
+}
+void trimspaces(char * t1){
+    char * temp;
+    temp=t1;
+    while(*temp==' '){
+        temp++;
+    }
+    while(*temp)
+    {*t1=*temp;
+        t1++;
+        temp++;
+    }
+    while(*t1==' ')
+    {
+        *t1=NULL;
+        t1--;
+    }
+}
+void tokanize(char *t1,char *t2, char *t3){
+
+    while(*t1!=' '&&*t1){
+        *t2=*t1;
+        t1++;
+        t2++;
+    }
+    *t2='\0';
+    t1++;
+    while(*t1){
+        *t3=*t1;
+        t1++;
+        t3++;
+    }
+    *t3='\0';
 }
