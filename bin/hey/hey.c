@@ -1,12 +1,12 @@
 #include<stdio.h>
-#include<stdlib.h>
+#include<unistd.h>
+#include<stdarg.h>
 
 int main(int argc, char* argv[], char* envp[])
 {
-	printf("Executing hey!");
-	char* p = (char*)malloc(sizeof(char));
-	*p = 'A';
-	printf("%c", *p);
-	printf("Value = %s", argv);
+	while(1){
+		sleep(10);
+		printf("hey! ");
+	}
 	return 0;
 }
