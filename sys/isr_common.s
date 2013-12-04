@@ -67,9 +67,6 @@ _isr_handler_head_0:
 	pop %rbx
 	pop %rax
 
-	# Turn interrupts back on
-	sti
-
 	# Return from interrupt
 	iretq
 
@@ -105,17 +102,11 @@ _isr_handler_head_10:
 	pop %rbx
 	pop %rax
 
-	# Turn interrupts back on
-	sti
-
 	# Return from interrupt
 	iretq
 	
 # For General Protection
 _isr_handler_head_13:
-
-	# Please don't interrupt
-	cli
 	
 	# Push the common registers
 	push %rax
@@ -143,16 +134,13 @@ _isr_handler_head_13:
 	pop %rbx
 	pop %rax
 
-	# Turn interrupts back on
-	sti
-
 	# Return from interrupt
 	iretq
 
 # For Page Fault
 _isr_handler_head_14:
 
-	cli
+
 	pop %r10
 	push %rax
 	push %rbx
@@ -196,13 +184,9 @@ _isr_handler_head_14:
 	pop %rbx
 	pop %rax
 
-	sti
-
 	iretq
 	
 _isr_handler_head_32:
-	# Please don't interrupt
-	cli
 	
 	# Push the common registers
 	pushq %rax
@@ -236,15 +220,11 @@ _isr_handler_head_32:
 	out %al, $0x20
 	out %al, $0xA0
 
-	# Turn interrupts back on
-	sti
 
 	# Return from interrupt
 	iretq
 
 _isr_handler_head_33:
-	# Please don't interrupt
-	cli
 	
 	# Push the common registers
 	pushq %rax
@@ -278,8 +258,6 @@ _isr_handler_head_33:
 	out %al, $0x20
 	out %al, $0xA0
 	
-	# Turn interrupts back on
-	sti
 
 	# Return from interrupt
 	iretq
