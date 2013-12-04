@@ -2,7 +2,7 @@
  * The ELF formats.
  */
 
-#include<stdio.h>
+#include<sys/kstdio.h>
 #include<sys/vm_mgr.h>
 #include<sys/pm_mgr.h>
 #include<sys/elf64.h>

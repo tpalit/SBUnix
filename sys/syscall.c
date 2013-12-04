@@ -7,7 +7,7 @@
 #include<syscall.h>
 #include<sys/proc_mgr.h>
 #include<sys/kstring.h>
-#include<stdio.h>
+#include<sys/kstdio.h>
 #include<sys/fork.h>
 #include<sys/dir.h>
 #include<sys/elf64.h>

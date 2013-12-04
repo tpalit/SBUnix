@@ -6,7 +6,7 @@
  */
 
 #include<defs.h>
-#include<stdio.h>
+#include<sys/kstdio.h>
 #include<common.h>
 #include<sys/vm_mgr.h>
 #include<sys/pm_mgr.h>
@@ -59,7 +59,7 @@ void start(uint32_t* modulep, void* physbase, void* physfree)
        	initialize_tss();
 	kprintf("Initializing idle process ... \n");
 	start_idle_process(); /* Process 0 */
-	make_process_from_elf("bin/ls");
+	make_process_from_elf("bin/sh");
         /*
        	make_process_from_elf("bin/hello");
 	make_process_from_elf("bin/test");

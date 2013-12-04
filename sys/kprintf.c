@@ -5,7 +5,7 @@
  *
  */
 
-#include<stdio.h>
+#include<sys/kstdio.h>
 #include<stdarg.h>
 #include<common.h>
 
