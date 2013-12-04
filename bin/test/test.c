@@ -1,4 +1,5 @@
 #include<stdio.h>
+#include<stdarg.h>
 #include<unistd.h>
 
 char* argp[] = {"Tapti", "Palit", "Ganesh"};
