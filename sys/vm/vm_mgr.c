@@ -142,6 +142,11 @@ int is_present(u64int entry)
 	return entry&0x01;
 }
 
+void unset_present(u64int* entry)
+{
+	*entry &= 0xfffffffffffffffe;
+}
+
 void set_present(u64int* entry)
 {
 	*entry |= 0x01;

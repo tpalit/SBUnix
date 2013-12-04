@@ -250,16 +250,18 @@ void copy_paging_structures(task_struct* parent_task, task_struct* child_task)
 					}
 					for(i1 = i2; i1 < i2+PD_RANGE && i1 < parent_vma_ptr->vm_end; i1+= PT_RANGE){
 						/* For each pt entry, copy it and set cow and readonly ! If already present, panic*/
-						if (!is_present((u64int)pt_entries_ptr[PT_OFFSET(i1)])) {
+						//						if (!is_present((u64int)pt_entries_ptr[PT_OFFSET(i1)])) {
 							pt_e* page_table_entry = (pt_e*)PT_ENTRY(i1);
 							pt_entries_ptr[PT_OFFSET(i1)] = page_table_entry[PT_OFFSET(i1)];
 							set_cow(&pt_entries_ptr[PT_OFFSET(i1)]);
 							set_cow(&page_table_entry[PT_OFFSET(i1)]);
 							set_readonly(&pt_entries_ptr[PT_OFFSET(i1)]);
 							set_readonly(&page_table_entry[PT_OFFSET(i1)]);
+							/*
 						} else {
 							panic("Tried to map an already mapped page!");
 						}
+							*/
 					}
 				}
 			}

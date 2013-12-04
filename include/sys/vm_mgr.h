@@ -39,6 +39,7 @@ u64int* set_base_addr(u64int*, u64int);
 int is_supervisor(u64int);
 int is_present(u64int);
 void set_present(u64int*);
+void unset_present(u64int*);
 u64int find_base_addr(u64int);
 int is_present(u64int);
 void set_present(u64int*);
