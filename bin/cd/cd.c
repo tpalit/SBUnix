@@ -3,7 +3,7 @@
 #include<stdlib.h>
 #include<unistd.h>
 #include<file.h>
-#include<sys/kstring.h>
+#include<string.h>
 #define buffsize 15
 #define pathlength 30
 int main(int argc, char* argv[], char* envp[])
@@ -24,7 +24,7 @@ int main(int argc, char* argv[], char* envp[])
     }
     else if(buff[0]!=NULL)
     {
-        addpath(path,buff);
+	    //        add_sub_dir(path,buff);
     }
     int f = opendir(path);
     return f;

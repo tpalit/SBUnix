@@ -6,6 +6,7 @@
 #include<sys/vm_mgr.h>
 #include<sys/pm_mgr.h>
 #include<sys/desc_tbls.h>
+#include<sys/kstdio.h>
 #include<common.h>
 
 /* The process lists. The task at the head of the READY_LIST should always be executed next.*/
@@ -504,6 +505,7 @@ void exit(void)
 	current_inactive = 1; /* Don't add CURRENT_TASK back to READY_LIST in schedule() */
 	if(CURRENT_TASK->parent_task != NULL){
 		CURRENT_TASK->parent_task->waiton_chld_exit = 0; /* @TODO - handle for more children */
+		kprintf("Waking up...");
 	}
 	add_to_zombie_list(CURRENT_TASK);
 	schedule();

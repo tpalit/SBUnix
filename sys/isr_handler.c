@@ -136,6 +136,7 @@ void isr_handler_body_14(void)
 			dump_regs();
 			panic("SEGFAULT - shouldn't kill the kernel, though!");
 			*/
+			dump_regs();
 			kprintf("SEGFAULT - Process killed!\n");
 			exit();
 		}
