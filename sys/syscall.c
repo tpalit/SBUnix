@@ -157,7 +157,13 @@ void do_sleep(u32int sleep_time)
  */
 int do_exec(char* file, char** argv, char** envp)
 {
+	/* Copy the argv -- @TODO - only the first being copied now. */
+//	char* argv_cpy = (char*)kmalloc(kstrlen(argv[0]));
+//	kstrcpy(argv_cpy, argv[0]);
 	overlay_task(file, CURRENT_TASK);
+//	kstrcpy((char*)argv, argv_cpy);
+
+	
 	return SUCCESS;
 }
 
