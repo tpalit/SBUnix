@@ -1,6 +1,9 @@
 /*
  * The process manager. 
  */
+/**
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
+ */
 
 #ifndef PROCMGR_H
 #define PROCMGR_H

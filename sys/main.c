@@ -1,7 +1,7 @@
 /*
  * The main file. The execution of the kernel begins from here.
  *
- * Copyright (c) by Tapti Palit. All rights reserved.
+ * Copyright (c) by Tapti Palit, Kaustubh Gharpure. All rights reserved.
  *
  */
 

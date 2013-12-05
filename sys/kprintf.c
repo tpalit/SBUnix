@@ -1,7 +1,7 @@
 /*
  * This file contains all routines required for the kernel printf.
  *
- * Copyright (c) 2013 by Tapti Palit. All rights reserved.
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
  *
  */
 

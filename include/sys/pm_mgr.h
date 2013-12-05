@@ -2,6 +2,9 @@
  * This file will contain the structures for free, wired and zero 
  * page-frame lists.
  */
+/**
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
+ */
 
 #ifndef PMMGR_H
 #define PMMGR_H

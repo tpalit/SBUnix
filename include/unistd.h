@@ -1,3 +1,7 @@
+/**
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
+ */
+
 #ifndef _UNISTD_H
 #define _UNISTD_H
 

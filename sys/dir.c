@@ -1,3 +1,7 @@
+/**
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
+ */
+
 #include<stdio.h>
 #include<sys/vm_mgr.h>
 #include<sys/pm_mgr.h>

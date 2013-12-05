@@ -1,3 +1,7 @@
+/**
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
+ */
+
 #ifndef _TARFS_H
 #define _TARFS_H
 

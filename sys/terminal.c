@@ -1,3 +1,6 @@
+/**
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
+ */
 #include<sys/kstdio.h>
 #include<sys/elf64.h>
 #include<sys/kstring.h>

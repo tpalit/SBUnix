@@ -2,7 +2,7 @@
  * This file will contain the actual interrupt handlers.
  * Check isr_common.s for details on how the code reaches here.
  *
- * Copyright (c) 2013 by Tapti Palit. All rights reserved.
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
  * 
  */
 #include<sys/timer.h>
