@@ -4,7 +4,6 @@
 long int k = -2;
 int main(void)
 {
-
 	if(fork()){
 		k++;
 		printf("In parent\n");

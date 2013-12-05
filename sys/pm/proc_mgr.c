@@ -120,9 +120,6 @@ void add_to_sleeping_list(task_struct* task_struct_ptr, event_struct* event_ptr)
 		}
 		sleeping_list_ptr->next = task_struct_ptr;
 	}	
-	if (event_ptr != NULL){
-		task_struct_ptr->waiting_on = event_ptr;
-	}
 }
 
 /**
@@ -185,7 +182,7 @@ void remove_from_sleeping_list(task_struct* task_struct_ptr)
 				sleeping_list_ptr->wait_time_slices--;	\
 			}						\
 			if (sleeping_list_ptr->wait_time_slices <=0	\
-			    && sleeping_list_ptr->waiton_chld_exit == 0){ \
+			    && sleeping_list_ptr->waiting == 0){ \
 				/* To remove */				\
 				ready_task = sleeping_list_ptr;		\
 				ready_task->wait_time_slices = 0;	\
@@ -504,8 +501,15 @@ void exit(void)
 {
 	current_inactive = 1; /* Don't add CURRENT_TASK back to READY_LIST in schedule() */
 	if(CURRENT_TASK->parent_task != NULL){
-		CURRENT_TASK->parent_task->waiton_chld_exit = 0; /* @TODO - handle for more children */
-		kprintf("Waking up...");
+		CURRENT_TASK->parent_task->num_children--; 
+		if (CURRENT_TASK->parent_task->waiton_spec_child_exit == CURRENT_TASK->pid){
+			CURRENT_TASK->parent_task->waiting = 0;
+			CURRENT_TASK->parent_task->waiton_spec_child_exit = -1;
+		}
+		if (CURRENT_TASK->parent_task->waiting && 
+		    CURRENT_TASK->parent_task->num_children == 0){
+			CURRENT_TASK->parent_task->waiting = 0;
+		}
 	}
 	add_to_zombie_list(CURRENT_TASK);
 	schedule();
@@ -527,8 +531,24 @@ void wait(void)
 {
 	current_inactive = 1;
 	add_to_sleeping_list(CURRENT_TASK, NULL);
-	/* @TODO - Handle for all children */
-	CURRENT_TASK->waiton_chld_exit = 1;
+	CURRENT_TASK->waiting = 1;
+	schedule();
+}
+
+void waitpid(u64int pid)
+{
+	current_inactive = 1;
+	add_to_sleeping_list(CURRENT_TASK, NULL);
+	CURRENT_TASK->waiting = 1;
+	CURRENT_TASK->waiton_spec_child_exit = pid;
+	schedule();
+}
+
+void wait_on_read()
+{
+	current_inactive = 1;
+	CURRENT_TASK->waiting = 1;
+	add_to_sleeping_list(CURRENT_TASK, NULL);
 	schedule();
 }
 /**
@@ -558,8 +578,9 @@ void create_kernel_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->last_run = NULL;
 	task_struct_ptr->pid = PROC_ID_TOP++;
 	task_struct_ptr->vm_head = NULL;
-	task_struct_ptr->waiting_on = NULL;
-	task_struct_ptr->waiton_chld_exit = 0;
+	task_struct_ptr->waiting = 0;
+	task_struct_ptr->waiton_spec_child_exit = -1;
+	task_struct_ptr->num_children = 0;
 	task_struct_ptr->wait_time_slices = 0;
 	task_struct_ptr->parent_task = NULL;
 	/* Set up the process address space */
@@ -611,9 +632,10 @@ void create_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->pid = PROC_ID_TOP++;
 	task_struct_ptr->parent_task = NULL;
 	task_struct_ptr->vm_head = NULL;
-	task_struct_ptr->waiting_on = NULL;
 	task_struct_ptr->wait_time_slices = 0;
-	task_struct_ptr->waiton_chld_exit = 0;
+	task_struct_ptr->waiting = 0;
+	task_struct_ptr->waiton_spec_child_exit = -1;
+	task_struct_ptr->num_children = 0;
 	/* Set up the process address space */
 	/* This has to be aligned on 0x1000 boundaries and need the physical address */
 	phys_vir_addr* page_addr = get_free_phys_page();
@@ -648,9 +670,10 @@ void reinit_user_process(task_struct* task_struct_ptr, u64int function_ptr)
 	task_struct_ptr->time_slices = DEFAULT_TIME_SLICE;
 	task_struct_ptr->rip_register = function_ptr;
 	task_struct_ptr->rflags = DEFAULT_FLAGS;
-	task_struct_ptr->waiting_on = NULL;
-	task_struct_ptr->waiton_chld_exit = 0;
+	task_struct_ptr->waiting = 0;
+	task_struct_ptr->waiton_spec_child_exit = -1;
 	task_struct_ptr->wait_time_slices = 0;
+	task_struct_ptr->num_children = 0;
 	/* Don't copy the CODE or DATA vmas as they'll be reloaded. */
 	vm_struct* vm_ptr = task_struct_ptr->vm_head;
 	vm_struct* vm_new_ptr = NULL;

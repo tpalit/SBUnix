@@ -91,6 +91,7 @@ u64int do_fork(void)
 {
 	task_struct* child_task_ptr = create_blank_process();
 	child_task_ptr->parent_task = CURRENT_TASK;
+	CURRENT_TASK->num_children++;
 	copy_paging_structures(CURRENT_TASK, child_task_ptr);
 	copy_vmas(CURRENT_TASK, child_task_ptr);
 	setup_stack(child_task_ptr);
@@ -124,7 +125,6 @@ task_struct* create_blank_process(void)
 	child_task->last_run = NULL;
 	child_task->pid = PROC_ID_TOP++;
 	child_task->vm_head = NULL;
-	child_task->waiting_on = NULL;
 	child_task->wait_time_slices = 0;
 	child_task->cr3_register = BAD_ADDRESS; /* Bad address - to be overwritten later */
 	return child_task;
