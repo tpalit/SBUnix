@@ -155,6 +155,11 @@ void do_waitpid(u64int pid)
 	waitpid(pid);
 }
 
+u64int do_getpid(void)
+{
+	return CURRENT_TASK->pid;
+}
+
 /* Set up the system call table*/
 void* syscalls_tbl[SYSCALL_NR] =
 {
@@ -171,7 +176,8 @@ void* syscalls_tbl[SYSCALL_NR] =
     do_readdir,           /*   10 */
     do_exec,              /*   11 */
     do_wait,              /*   12 */
-    do_waitpid            /*   13 */
+    do_waitpid,           /*   13 */
+    do_getpid             /*   14 */
 };
 
 /*
@@ -208,16 +214,7 @@ void syscall_handler(void)
     __asm__ __volatile__("movq %%rsp, %[old_rsp]\n\t": [old_rsp] "=r"(syscalling_task_rsp));
     __asm__ __volatile__("movq 144(%%rsp), %[ret_addr]\n\t":[ret_addr] "=r"(syscall_ret_address) );
     __asm__ __volatile__("movq 168(%%rsp), %[ustck_addr]\n\t":[ustck_addr] "=r"(syscalling_task_user_rsp) );
-    /*
-    __asm__ __volatile__ ("movq %%rax, %[rax]\n\t"
-			  "movq %%rsp, %[old_rsp]\n\t"
-			  "movq 120(%%rsp), %[ret_addr]\n\t"
-			  "movq 144(%%rsp), %[ustck_addr]\n\t"
-			  :[rax]"=r"(rax), [old_rsp] "=r"(syscalling_task_rsp), [ret_addr] "=r"(syscall_ret_address),
-			  [ustck_addr] "=r"(syscalling_task_user_rsp)
-			  :
-			  :"rdi","rsi", "rdx" );
-    */
+
     if (rax >= SYSCALL_NR)
         return;
     void *location = syscalls_tbl[rax];

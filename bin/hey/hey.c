@@ -5,5 +5,6 @@
 int main(int argc, char* argv[], char* envp[])
 {
 	printf("Such is life!\n");
+	printf("My pid is %d", getpid());
 	return 0;
 }
