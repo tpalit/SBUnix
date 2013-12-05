@@ -15,7 +15,6 @@ int main(int argc, char* argv[], char* envp[])
         printf("User@Sbunix$");
         scanf("%s", buffer);
         printf("\n");
-	printf("Read %s", buffer);
         char** tokens = strtok(buffer);
         if(!isnullstring(tokens[0])) {
             child_pid = fork();
