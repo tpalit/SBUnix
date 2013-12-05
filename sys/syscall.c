@@ -10,6 +10,7 @@
 #include<sys/kstdio.h>
 #include<sys/fork.h>
 #include<sys/dir.h>
+
 #include<sys/elf64.h>
 #include<sys/tarfs.h>
 #define SYSCALL_NR 25 
@@ -73,31 +74,28 @@ int do_readdir(char *s,int dird)
         return 0;
     }
     else{
-        for (k=0;k<c;k++){
-            trim(i->dir_path,ptr->name,temp);
-            byte_size = tarfs_atoi(ptr->size,8) + sizeof(posix_header_ustar); // size in bytes
-            size = byte_size/sizeof(posix_header_ustar);
-            if (byte_size%sizeof(posix_header_ustar) != 0)
-                size++;
-            ptr = ptr + size;
-            trim(i->dir_path,ptr->name,b);
-            while(kstrcmp(b,temp)){
-            byte_size = tarfs_atoi(ptr->size,8) + sizeof(posix_header_ustar); // size in bytes
-            size = byte_size/sizeof(posix_header_ustar);
-            if (byte_size%sizeof(posix_header_ustar) != 0)
-                size++;
-            ptr = ptr + size;
-            trim(i->dir_path,ptr->name,b);
-            
-            }
+        for(k=0;k<c;k++){
+		trim(i->dir_path,ptr->name,temp);
+		byte_size = tarfs_atoi(ptr->size,8) + sizeof(posix_header_ustar); // size in bytes
+		size = byte_size/sizeof(posix_header_ustar);
+		if (byte_size%sizeof(posix_header_ustar) != 0)
+			size++;
+		ptr = ptr + size;
+		trim(i->dir_path,ptr->name,b);
+		while(kstrcmp(b,temp)){
+			byte_size = tarfs_atoi(ptr->size,8) + sizeof(posix_header_ustar); // size in bytes
+			size = byte_size/sizeof(posix_header_ustar);
+			if (byte_size%sizeof(posix_header_ustar) != 0)
+				size++;
+			ptr = ptr + size;
+			trim(i->dir_path,ptr->name,b);
+		}
         }
-        if(kstrcmpsz(i->dir_path,ptr->name))
-        {
+        if(kstrcmpsz(i->dir_path,ptr->name)) {
             trim(i->dir_path,ptr->name,s);
             i->count++;
             return 0;
         }
-
     }
     return -1;
 }

@@ -16,8 +16,6 @@ int opendir(char *fname) {
     __asm__("int $0x80\n\t");
     /* The return value is also in rax register. */
     __asm__("movq %%rax, %[retVal]\n\t":[retVal]"=r"(ret_val));
-    if(ret_val==0)
-        printf("dir not found");
     return ret_val;
 
 }
