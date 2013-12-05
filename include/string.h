@@ -18,5 +18,6 @@ void trimspaces(char *);
 void tokanize(char *,char *,char *);
 int strlen(char*);
 int isnullstring(char*);
+void strconc(char *,char *);
 char** strtok(char*);
 #endif

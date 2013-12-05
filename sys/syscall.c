@@ -73,8 +73,10 @@ int do_close(int i)
 }
 int do_opendir(char *s){
     int result;
-    readystr(s);
-    result = find_dir(s);
+    char buff[50];
+    kstrcpy(buff,s);
+    readystr(buff);
+    result = find_dir(buff);
     return result;
 }
 int do_readdir(char *s,int dird)
