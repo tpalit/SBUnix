@@ -4,25 +4,23 @@
 #include<unistd.h>
 #include<file.h>
 #include<sys/kstring.h>
-#define buffsize 50 
+#define BUFFSIZE 50 
 int main(int argc, char* argv[], char* envp[])
 {
-    /* For LS we need to pass the dir descriptor as an argument 
-     * the shell will get that dir descriptor from the cd 
-     * for now I am opening a descriptor here for test purpose*/
-    int i;
-    int f = opendir(argv[0]);
-    if(f!=0){
-    char buff[buffsize];
-    readdir(buff,f);
-    printf("\n%s",buff);
-    while(buff[0]!=NULL)
-    {
-        for(i=0;i<buffsize;i++)
-            buff[i]=NULL;
-        readdir(buff,f);
-        printf("\n%s",buff);
-    }
-    }
-    return 0;
+	int i;
+	char buff[BUFFSIZE];
+	int fd = opendir(argv[1]);
+	if (fd != 0){
+		readdir(buff,fd);
+		printf("\n%s",buff);
+		while(buff[0]!=NULL){
+			for(i=0;i<BUFFSIZE;i++)
+				buff[i]=NULL;
+			readdir(buff,fd);
+			printf("\n%s",buff);
+		}
+	} else {
+		printf("Could not find directory!\n");
+	}
+	return 0;
 }
