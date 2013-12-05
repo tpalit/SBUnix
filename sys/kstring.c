@@ -50,7 +50,6 @@ void trim(char * t1, char *t2,char * t3){
         t1++;
         t2++;
     }
-    t2++;
     while(*t2!='/'&&*t2)
     {
         *t3 = *t2;
