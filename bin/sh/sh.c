@@ -17,7 +17,7 @@ int main(int argc, char* argv[], char* envp[])
         scanf("%s", buffer);
         printf("\n");
         char** tokens = strtok(buffer);
-        :f(!isnullstring(tokens[0])) {
+        if(!isnullstring(tokens[0])) {
             child_pid = fork();
             if(child_pid==0){
                 execvpe(tokens[0], tokens, NULL);
