@@ -37,10 +37,25 @@ int do_write(char* s)
 
 int do_read(char* s,int i,int bsize)
 {
-	CURRENT_TASK->rsp_register = syscalling_task_rsp;
-	BLOCKED_ON_READ = CURRENT_TASK;
-	BLOCKED_BUFFER = s;
-	wait_on_read();
+	char* ptr = NULL;
+	if (i==0) {
+		/* Wait on STDIN */
+		CURRENT_TASK->rsp_register = syscalling_task_rsp;
+		BLOCKED_ON_READ = CURRENT_TASK;
+		BLOCKED_BUFFER = s;
+		wait_on_read();
+	} else {
+		ptr=read_ptr(i);
+		if(*ptr!=NULL) {
+			if(bsize!=0) {
+				kstrcpysz(s,ptr,bsize);
+			} else {
+				kstrcpy(s,ptr);
+			}
+		} else {
+			return -1;
+		}
+	}
 	return 0;
 }
 
