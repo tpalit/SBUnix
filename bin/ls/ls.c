@@ -4,14 +4,15 @@
 #include<unistd.h>
 #include<file.h>
 #include<sys/kstring.h>
-#define buffsize 15
+#define buffsize 50 
 int main(int argc, char* argv[], char* envp[])
 {
     /* For LS we need to pass the dir descriptor as an argument 
      * the shell will get that dir descriptor from the cd 
      * for now I am opening a descriptor here for test purpose*/
     int i;
-    int f = opendir("filesystem");
+    int f = opendir(argv[0]);
+    if(f!=0){
     char buff[buffsize];
     readdir(buff,f);
     printf("\n%s",buff);
@@ -21,6 +22,7 @@ int main(int argc, char* argv[], char* envp[])
             buff[i]=NULL;
         readdir(buff,f);
         printf("\n%s",buff);
+    }
     }
     return 0;
 }

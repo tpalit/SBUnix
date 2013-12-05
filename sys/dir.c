@@ -31,7 +31,7 @@ int find_dir(char* path){
         if (size < 0l) break; /* not sure what's happening here!*/
         ptr = ptr + size;
     }
-    return NULL;
+    return 0;
 }
 int find_file(char* path){
     posix_header_ustar* ptr = (posix_header_ustar*)&_binary_tarfs_start;
