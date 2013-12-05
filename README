@@ -1,3 +1,27 @@
+This is 60 point project.
+
+Team members - 
+Tapti Palit (SBU Id - 109293381)
+Kaustubh Gharpure (SBU Id - )
+
+To run a new executable present in the tarfs, please enter the full path to the executable at the shell. 
+
+E.g. $bin/ps 
+
+The following test cases are provided --
+
+1. test-malloc: A simple test case illustrating malloc()
+2. test-malloc-segv : This test case tries to access a memory location that is not allocated to it.
+   		    The page fault is handled and the process is killed with appropriate error message.
+3. test-malloc-limit : This test case illustrates the per process limit of heap memory. The limits are
+   		     defined in the include/sys/limits.h
+4. test-sleep : This test case illustrates sleep().
+5. test-file : This test case illustrates open(), read() and close().
+
+The shell (bin/sh) illustrates fork(), execvpe(), waitpid(). The shell however is a very basic shell that doesn't support background processes or shebang.
+
+
+
 The provided Makefile:
   1) builds a kernel
 	2) copies it into rootfs/boot/kernel/kernel

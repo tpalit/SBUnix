@@ -12,8 +12,6 @@
 #include<common.h>
 
 #define PAGE_SIZE 4096
-#define STACK_LIMIT PAGE_SIZE*4
-#define HEAP_LIMIT PAGE_SIZE*4
 
 /* The constants for type of page */
 #define KERN_PG 1
