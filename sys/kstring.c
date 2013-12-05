@@ -121,3 +121,15 @@ void num2str(int i, char b[]){
     }while(i);
 
 }
+void readystr(char * t1){
+    while(*t1)
+    {
+        t1++;
+    }
+    t1--;
+    if(*t1!='/')
+    {
+        t1++;
+        *t1='/';
+    }
+}
