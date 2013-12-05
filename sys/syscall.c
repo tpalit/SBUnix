@@ -56,6 +56,7 @@ int do_close(int i)
 }
 int do_opendir(char *s){
     int result;
+    readystr(s);
     result = find_dir(s);
     return result;
 }
