@@ -88,3 +88,36 @@ void* kmemcpy(void* dest, void* src, int count)
         }
         return dest;
 }
+void strconcat(char *t1, char *t2)
+{
+    while(*t1)
+    {
+        t1++;
+    }
+    while(*t2)
+    {
+        *t1=*t2;
+        t1++;
+        t2++;
+    }
+    *t1='\0';
+}
+void num2str(int i, char b[]){
+    char const digit[] = "0123456789";
+    char* p = b;
+    if(i<0){
+        *p++ = '-';
+        i = -1;
+    }
+    int shifter = i;
+    do{ //Move to where representation ends
+        ++p;
+        shifter = shifter/10;
+    }while(shifter);
+    *p = '\0';
+    do{ //Move back, inserting digits as u go
+        *--p = digit[i%10];
+        i = i/10;
+    }while(i);
+
+}

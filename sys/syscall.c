@@ -12,7 +12,7 @@
 #include<sys/dir.h>
 #include<sys/elf64.h>
 #include<sys/tarfs.h>
-#define SYSCALL_NR 15
+#define SYSCALL_NR 25 
 
 /* The process that is blocked on read and the buffer provided to it. */
 task_struct* BLOCKED_ON_READ = NULL;
@@ -159,7 +159,9 @@ u64int do_getpid(void)
 {
 	return CURRENT_TASK->pid;
 }
-
+void do_getprocinfo(char * buff){
+sendpid(buff);
+}
 /* Set up the system call table*/
 void* syscalls_tbl[SYSCALL_NR] =
 {
@@ -177,7 +179,8 @@ void* syscalls_tbl[SYSCALL_NR] =
     do_exec,              /*   11 */
     do_wait,              /*   12 */
     do_waitpid,           /*   13 */
-    do_getpid             /*   14 */
+    do_getpid,            /*   14 */
+    do_getprocinfo        /*   15 */  
 };
 
 /*

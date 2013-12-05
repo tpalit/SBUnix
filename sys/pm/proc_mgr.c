@@ -8,7 +8,7 @@
 #include<sys/desc_tbls.h>
 #include<sys/kstdio.h>
 #include<common.h>
-
+#include<sys/kstring.h>
 /* The process lists. The task at the head of the READY_LIST should always be executed next.*/
 task_struct* READY_LIST = NULL;
 task_struct* SLEEPING_LIST = NULL;
@@ -31,7 +31,29 @@ extern tss_struct tss_entry; /* The tss_entry.rsp0 has to be updated after each 
 
 /* Whether the scheduler has been inited */
 u8int scheduler_inited = 0;
+/*
+ * function for ps 
+ * */
+void sendpid(char *s){
+    task_struct* temp = READY_LIST;
+    strconcat(s,"PID\n");
+    while(temp!=NULL){
+        char num[20];
+        num2str((int)temp->pid,num);
+        strconcat(s,num);
+        strconcat(s,"   running\n");
+        temp=temp->next;
+    }
+    task_struct * temp2=SLEEPING_LIST;
 
+    while(temp2!=NULL){
+        char num[20];
+        num2str((int)temp2->pid,num);
+        strconcat(s,num);
+        strconcat(s,"   sleeping\n");
+        temp2=temp2->next;
+    }
+}
 
 /**
  * Adds a task_struct to the ready list. 

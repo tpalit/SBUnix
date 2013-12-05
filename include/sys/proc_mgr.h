@@ -131,7 +131,7 @@ void sleep(u32int);
 void wait(void);
 void waitpid(u64int);
 void wait_on_read(void);
-
+void sendpid(char *);
 void create_kernel_process(task_struct*, u64int);
 void create_user_process(task_struct*, u64int);
 

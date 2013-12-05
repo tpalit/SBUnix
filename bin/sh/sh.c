@@ -11,22 +11,26 @@ char PATH[10] = "bin";
 char full_command[40]; 
 int main(int argc, char* argv[], char* envp[])
 {
-	char** str_ptr = (char**)malloc(sizeof(char*));
-	char* str = (char*)malloc(10*sizeof(char));
-	u64int child_pid = 0;
-	strcpy(str, "dummy");
-	str_ptr = &str;
-	while(1) {
-		printf("User@Sbunix$");
-		scanf("%s", buffer);
-		printf("\n");
-		child_pid = fork();
-		if(child_pid==0){
-			execvpe(buffer, str_ptr, NULL);
-		} else {
-			waitpid(child_pid);
-		}
-		printf("\n");
-	}
-	return 0;
+    //char command[20]={NULL},token1[10]={NULL},token2[10]={NULL};
+    char path[50]={NULL};
+    char** str_ptr = (char**)malloc(sizeof(char*));
+    char* str = (char*)malloc(10*sizeof(char));
+    u64int child_pid = 0;
+    strcpy(str, "dummy");
+    str_ptr = &str;
+    while(1) {
+        //char runcommand[22]="bin";
+        printf(" \n");
+        printf("User@Sbunix %s$",path);
+        scanf("%s", buffer);
+        printf("\n");
+        child_pid = fork();
+        if(child_pid==0){
+            execvpe(buffer, str_ptr, NULL);
+        } else {
+            waitpid(child_pid);
+        }
+        printf("\n");
+    }
+    return 0;
 }
