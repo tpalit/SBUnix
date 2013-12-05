@@ -7,6 +7,7 @@
 
 #include<common.h>
 #include<syscall.h>
+#include<sys/limits.h>
 #include<sys/proc_mgr.h>
 #include<sys/kstring.h>
 #include<sys/kstdio.h>
@@ -137,6 +138,10 @@ int do_malloc(u32int mem_size)
     }
     ret_ptr = vma_ptr->vm_end;
     vma_ptr->vm_end+=mem_size;
+    if (vma_ptr->vm_end - vma_ptr->vm_start > HEAP_LIMIT){
+	    kprintf("Allocation exceeds per process limit. Process killed.\n");
+	    exit();
+    }
     return ret_ptr;
 }
 
@@ -178,7 +183,7 @@ u64int do_getpid(void)
 	return CURRENT_TASK->pid;
 }
 void do_getprocinfo(char * buff){
-sendpid(buff);
+	sendpid(buff);
 }
 /* Set up the system call table*/
 void* syscalls_tbl[SYSCALL_NR] =

@@ -10,6 +10,7 @@
 #include<sys/kstdio.h>
 #include<sys/proc_mgr.h>
 #include<sys/pm_mgr.h>
+#include<sys/limits.h>
 #include<sys/vm_mgr.h>
 #include<sys/kstring.h>
 #include<sys/terminal.h>
@@ -155,7 +156,7 @@ void isr_handler_body_14(void)
 			dump_regs();
 			panic("SEGFAULT - shouldn't kill the kernel, though!");
 			*/
-			dump_regs();
+			//			dump_regs();
 			kprintf("SEGFAULT - Process killed!\n");
 			exit();
 		}

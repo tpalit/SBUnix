@@ -39,12 +39,12 @@ u8int scheduler_inited = 0;
  * */
 void sendpid(char *s){
     task_struct* temp = READY_LIST;
-    strconcat(s,"PID\n");
+    strconcat(s,"PID     Status\n");
     while(temp!=NULL){
         char num[20];
         num2str((int)temp->pid,num);
         strconcat(s,num);
-        strconcat(s,"   running\n");
+        strconcat(s,"   Ready\n");
         temp=temp->next;
     }
     task_struct * temp2=SLEEPING_LIST;
@@ -53,9 +53,13 @@ void sendpid(char *s){
         char num[20];
         num2str((int)temp2->pid,num);
         strconcat(s,num);
-        strconcat(s,"   sleeping\n");
+        strconcat(s,"   Sleeping\n");
         temp2=temp2->next;
     }
+    char num[20];
+    num2str((int)CURRENT_TASK->pid,num);
+    strconcat(s, num);
+    strconcat(s, "   Running\n");
 }
 
 /**
