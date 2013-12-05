@@ -32,8 +32,9 @@ int getcontent(char *format,u64int fd,u64int buffsize) {
 
 int read(char *target,int fd,int size){
     char buffer[100];
-    getcontent(buffer,fd,size);
+    int i;
+    i=getcontent(buffer,fd,size);
     strcpy(target,buffer);
-    return 0;
+    return i;
 }
 

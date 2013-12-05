@@ -114,7 +114,21 @@ int strlen(char* str)
 	}
 	return length;
 }
-
+void strconc(char *t1,char *t2){
+        while(*t1)
+    {
+        t1++;
+    }
+    *t1='/';
+    t1++;
+    while(*t2)
+    {
+        *t1=*t2;
+        t1++;
+        t2++;
+    }
+    *t1='\0';
+}
 int isnullstring(char* str)
 {
 	if(str == NULL){
