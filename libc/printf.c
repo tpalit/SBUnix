@@ -8,20 +8,6 @@ static char char_buffer[1024]; /* Temporary block to use. */
 static char final_buffer[1024]; /* This will be sent to the kernel to be printed */
 static int final_buffer_indx = 0x0;
 
-int printf1(const char *format, ...) {
-	register volatile u64int ret_val = 0;
-	/* Store the pointer in the rdx register. */
-	__asm__ __volatile__("movq %[s], %%rdx\n\t"
-			     :
-			     :[s]"m"(format));
-	/* Store the system call index in the rax register. */
-	__asm__ __volatile__("movq $0, %rax\n\t");
-	__asm__("int $0x80\n\t");
-	/* The return value is also in rax register. */
-	__asm__("movq %%rax, %[retVal]\n\t":[retVal]"=r"(ret_val));
-	return ret_val;
-}
-
 void reverse(char *str, int length)
 {
 	int i=0, j = length-1;

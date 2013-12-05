@@ -86,6 +86,7 @@ void isr_handler_body_14(void)
 	volatile u64int error_code = 0x0;
 	vm_struct* vma_to_map = NULL;
 	u8int okay_to_map = 0;
+	u8int okay_to_regrow = 0;
 	__asm__ __volatile__("movq %%cr2, %[cr2_register]\n\t":[cr2_register]"=r"(faulting_address));
 	__asm__ __volatile__("movq %%r10, %[error_code]\n\t":[error_code]"=r"(error_code));
 	
@@ -125,12 +126,30 @@ void isr_handler_body_14(void)
 				okay_to_map = 1;
 				break;
 			}
+			if (vm_struct_ptr->vm_type == STACK_VMA
+			    && faulting_address <= vm_struct_ptr->vm_end+16
+			    && vm_struct_ptr->vm_end-vm_struct_ptr->vm_start+16 < STACK_LIMIT){
+				/* Auto grow the stack */
+				okay_to_regrow = 1;
+				break;
+			}
 			vm_struct_ptr = vm_struct_ptr->vm_next;
 		}
 		if(okay_to_map){
 			kmmap((void*)vma_to_map->vm_start, 
 			      vma_to_map->vm_end-vma_to_map->vm_start,
 			      0, 0, 0, 0);
+		} else if (okay_to_regrow){
+			/* Allocate another page to stack */
+			vm_struct_ptr = CURRENT_TASK->vm_head;
+			while(vm_struct_ptr != NULL) {
+				if (vm_struct_ptr->vm_type == STACK_VMA) {
+					kmmap((void*)vm_struct_ptr->vm_start,
+					      vm_struct_ptr->vm_end+PAGE_SIZE,
+					      0,0,0,0);
+					vm_struct_ptr->vm_end += PAGE_SIZE;
+				}
+			}
 		} else {
 			/*
 			dump_regs();
@@ -145,28 +164,6 @@ void isr_handler_body_14(void)
 		panic("Unhandled page fault!");
 	}
 
-	/*
-	if (faulting_address >= KERN_VIR_START || (error_code & 0x01)) { 
-		dump_regs();
-		panic("Bad type of Page fault Happened!");
-	} else {
-		vm_struct* vm_struct_ptr = CURRENT_TASK->vm_head;
-		while (vm_struct_ptr != NULL){
-			if (faulting_address >= vm_struct_ptr->vm_start && 
-			    faulting_address <= vm_struct_ptr->vm_end){
-				vma_to_map = vm_struct_ptr;
-				okay_to_map = 1;
-				break;
-			}
-			vm_struct_ptr = vm_struct_ptr->vm_next;
-		}
-	}
-	if(okay_to_map){
-		kmmap((void*)vma_to_map->vm_start, 
-		      vma_to_map->vm_end-vma_to_map->vm_start,
-		      0, 0, 0, 0);
-	}
-	*/
 }
 
 
