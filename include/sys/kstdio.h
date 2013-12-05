@@ -8,7 +8,7 @@ volatile int writebuff;
 
 int kprintf(const char *format, ...);
 int scanf(const char *format, ...);
-
+void ltoa(u64int, char*);
 void putchar(const char);
 void putint(s32int, int);
 void puts(const char*);

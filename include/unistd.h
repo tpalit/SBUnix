@@ -9,5 +9,5 @@ u64int execvpe(char* path, char* argv[], char* envp[]);
 u64int wait(void);
 u64int waitpid(u64int);
 u64int getpid(void);
-
+int getprocinfo(char *);
 #endif
