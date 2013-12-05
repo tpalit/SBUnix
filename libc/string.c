@@ -153,6 +153,9 @@ char** strtok(char* str)
 	for (k=0; k<32;k++){
 		temp[k] = '\0';
 	}
+	for (k=0; k<MAX_TOKENS; k++) {
+		*(result+k) = 0x0;
+	}
 	int i = 0, j=0;
 	int processed = 0;
 	do{
