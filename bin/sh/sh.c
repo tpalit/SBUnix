@@ -13,16 +13,18 @@ int main(int argc, char* argv[], char* envp[])
 {
 	char** str_ptr = (char**)malloc(sizeof(char*));
 	char* str = (char*)malloc(10*sizeof(char));
+	u64int child_pid = 0;
 	strcpy(str, "dummy");
 	str_ptr = &str;
 	while(1) {
 		printf("User@Sbunix$");
 		scanf("%s", buffer);
 		printf("\n");
-		if(fork()==0){
+		child_pid = fork();
+		if(child_pid==0){
 			execvpe(buffer, str_ptr, NULL);
 		} else {
-			wait();
+			waitpid(child_pid);
 		}
 		printf("\n");
 	}

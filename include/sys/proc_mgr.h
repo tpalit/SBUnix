@@ -53,8 +53,9 @@ struct task_struct
 	struct task_struct* last_run; /* The process that ran last */
 	vm_struct* vm_head;
 	cr3_reg cr3_register;
-	u8int waiton_chld_exit;
-	event_struct* waiting_on; /* The events waiting on*/
+	u8int num_children;
+	u8int waiting; /* Whether this task is waiting */
+	u8int waiton_spec_child_exit; /* pid of the specific child whose completion this task is waiting for */
 	u32int wait_time_slices; /* Remaining time this task should wait. */
 };
 
@@ -128,6 +129,8 @@ void schedule_on_timer(void);
 void exit(void);
 void sleep(u32int);
 void wait(void);
+void waitpid(u64int);
+void wait_on_read(void);
 
 void create_kernel_process(task_struct*, u64int);
 void create_user_process(task_struct*, u64int);

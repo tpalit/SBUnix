@@ -1,6 +1,11 @@
 #include<sys/kstdio.h>
 #include<sys/elf64.h>
 #include<sys/kstring.h>
+#include<sys/proc_mgr.h>
+
+extern task_struct* BLOCKED_ON_READ;
+extern char* BLOCKED_BUFFER;
+
 unsigned char kbdus[128] =
 {
     0,  27, '1', '2', '3', '4', '5', '6', '7', '8',
@@ -83,26 +88,46 @@ unsigned char kbdus1[128] =
 #define BUFF_SIZE 100
 char buff[BUFF_SIZE]={NULL};
 unsigned int buffp=0;
+
 void buffer (unsigned int op, unsigned char key)
 {
-    if(op==0&&buffp!=0){
-        buff[--buffp]=NULL;
-    }
-    else if(op==1){
-        buff[buffp++]=key;
-    }
-    else if(op==3){
-        if(buff[0]!=NULL){
-        kstrcpy(STDIN,buff);
-        buffp = 0;
-        writebuff=1;
-        }
-        int i;
-       for(i = 0; i<BUFF_SIZE; i++) {
-            buff[i]=NULL; // clearing the buffer
-        }
-    }
+	if(op==0&&buffp!=0){
+		buff[--buffp]=NULL;
+	}
+	else if(op==1){
+		buff[buffp++]=key;
+	}
+	else if(op==3){
+		if(buff[0]!=NULL){
+			kstrcpy(STDIN,buff);
+			buffp = 0;
+			writebuff=1;
+			/* Wake up the process waiting on the read */
+			if (BLOCKED_ON_READ != NULL){
+				u64int old_cr3 = 0L;
+				__asm__ __volatile__(
+						     "movq %%cr3, %0\n\t"
+						     :"=r"(old_cr3));
+				__asm__ __volatile__(
+						     "movq %0, %%cr3\n\t"
+						     ::"r"(BLOCKED_ON_READ->cr3_register));
+				kstrcpy(BLOCKED_BUFFER, buff);
+				__asm__ __volatile__(
+						     "movq %0, %%cr3\n\t"
+						     ::"r"(old_cr3));	
+				BLOCKED_ON_READ->waiting = 0;
+				BLOCKED_ON_READ = NULL;
+				BLOCKED_BUFFER = NULL;
+			}
+
+		}
+		int i;
+		for(i = 0; i<BUFF_SIZE; i++) {
+			buff[i]=NULL; // clearing the buffer
+		}
+	}
 }
+
 void terminal(unsigned char scancode)
 {
     //	unsigned char* temp;

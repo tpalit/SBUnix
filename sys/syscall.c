@@ -14,6 +14,9 @@
 #include<sys/tarfs.h>
 #define SYSCALL_NR 15
 
+/* The process that is blocked on read and the buffer provided to it. */
+task_struct* BLOCKED_ON_READ = NULL;
+char* BLOCKED_BUFFER = NULL;
 
 extern task_struct* CURRENT_TASK;
 
@@ -31,33 +34,11 @@ int do_write(char* s)
 
 int do_read(char* s,int i,int bsize)
 {
-	/* @TODO - Incorrect way of doing a read() */
-    char * ptr=NULL;
-    int o = 0;
-    if(i==0){
-        for(o =0 ;o<100;o++) {
-            STDIN[o]=NULL; // clearing the buffer
-        }
-        __asm__ __volatile__("sti\n\t");
-        writebuff=0;
-        while(writebuff==0){
-            if(writebuff!=0)
-                break;
-        }
-        kstrcpy(s,STDIN);
-    }
-    else{
-        ptr=read_ptr(i);
-        if(*ptr!=NULL)
-            if(bsize!=0)
-                kstrcpysz(s,ptr,bsize);
-            else
-                kstrcpy(s,ptr);
-
-        else
-            kprintf("\nfile not open");
-    }
-    return 0;
+	CURRENT_TASK->rsp_register = syscalling_task_rsp;
+	BLOCKED_ON_READ = CURRENT_TASK;
+	BLOCKED_BUFFER = s;
+	wait_on_read();
+	return 0;
 }
 
 int do_open(char *s)
@@ -158,13 +139,7 @@ void do_sleep(u32int sleep_time)
  */
 int do_exec(char* file, char** argv, char** envp)
 {
-	/* Copy the argv -- @TODO - only the first being copied now. */
-//	char* argv_cpy = (char*)kmalloc(kstrlen(argv[0]));
-//	kstrcpy(argv_cpy, argv[0]);
 	overlay_task(file, CURRENT_TASK);
-//	kstrcpy((char*)argv, argv_cpy);
-
-	
 	return SUCCESS;
 }
 
@@ -172,6 +147,12 @@ void do_wait()
 {
 	CURRENT_TASK->rsp_register = syscalling_task_rsp;
 	wait();
+}
+
+void do_waitpid(u64int pid)
+{
+	CURRENT_TASK->rsp_register = syscalling_task_rsp;
+	waitpid(pid);
 }
 
 /* Set up the system call table*/
@@ -189,7 +170,8 @@ void* syscalls_tbl[SYSCALL_NR] =
     do_closedir,          /*   9 */
     do_readdir,           /*   10 */
     do_exec,              /*   11 */
-    do_wait               /*   12 */
+    do_wait,              /*   12 */
+    do_waitpid            /*   13 */
 };
 
 /*
