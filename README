@@ -4,11 +4,16 @@ Team members -
 Tapti Palit (SBU Id - 109293381)
 Kaustubh Gharpure (SBU Id - 108601042)
 
-To run a new executable present in the tarfs, please enter the full path to the executable at the shell. 
+To run a new executable present from the tarfs, please enter the full path to the executable at the shell. 
 
 E.g. $bin/ps 
+E.g. $bin/ls filesystem/
 
-The following test cases are provided --
+To create a new process from within the kernel, two functions exist --
+1. create_kernel_process(task_struct* empty_task_struct, u64int entry_point_addr);
+2. create_user_process(task_struct* empty_task_struct, u64int entry_point_addr);
+
+The following test cases are provided under bin/ --
 
 1. test-malloc: A simple test case illustrating malloc()
 2. test-malloc-segv : This test case tries to access a memory location that is not allocated to it.
@@ -18,9 +23,10 @@ The following test cases are provided --
 4. test-sleep : This test case illustrates sleep().
 5. test-file : This test case illustrates open(), read() and close().
 
-The shell (bin/sh) illustrates fork(), execvpe(), waitpid(). The shell however is a very basic shell that doesn't support background processes or shebang.
+The shell (bin/sh) illustrates fork(), execvpe(), waitpid(). The shell, however, is a very basic shell that doesn't support background processes or shebang.
 
-
+====================================================================================
+====================================================================================
 
 The provided Makefile:
   1) builds a kernel
