@@ -10,17 +10,18 @@
 char buffer[100];
 int main(int argc, char* argv[], char* envp[])
 {
-    char PATH [50]={NULL};
     u64int child_pid = 0;
     while(1) {
-        printf("User@Sbunix %s$",PATH);
+        printf("User@Sbunix$");
         scanf("%s", buffer);
         printf("\n");
+	printf("Read %s", buffer);
         char** tokens = strtok(buffer);
         if(!isnullstring(tokens[0])) {
             child_pid = fork();
             if(child_pid==0){
-                execvpe(tokens[0], tokens, NULL);
+		    execvpe(tokens[0], tokens, NULL);
+		    exit(1);
             } else {
                 waitpid(child_pid);
             }
