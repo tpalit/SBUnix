@@ -2,35 +2,29 @@
 #include<unistd.h>
 #include<stdlib.h>
 #include<string.h>
+
 char buffer[100];
 char cwd[50];
-char command[20];
-char token1[10];
-char token2[10];
 char PATH[10] = "bin";
 char full_command[40]; 
+
 int main(int argc, char* argv[], char* envp[])
 {
-    //char command[20]={NULL},token1[10]={NULL},token2[10]={NULL};
-    char path[50]={NULL};
-    char** str_ptr = (char**)malloc(sizeof(char*));
-    char* str = (char*)malloc(10*sizeof(char));
-    u64int child_pid = 0;
-    strcpy(str, "dummy");
-    str_ptr = &str;
-    while(1) {
-        //char runcommand[22]="bin";
-        printf(" \n");
-        printf("User@Sbunix %s$",path);
-        scanf("%s", buffer);
-        printf("\n");
-        child_pid = fork();
-        if(child_pid==0){
-            execvpe(buffer, str_ptr, NULL);
-        } else {
-            waitpid(child_pid);
-        }
-        printf("\n");
-    }
-    return 0;
+	u64int child_pid = 0;
+	while(1) {
+		printf("User@Sbunix$");
+		scanf("%s", buffer);
+		printf("\n");
+		char** tokens = strtok(buffer);
+		if(!isnullstring(tokens[0])) {
+			child_pid = fork();
+			if(child_pid==0){
+				execvpe(tokens[0], tokens, NULL);
+			} else {
+				waitpid(child_pid);
+			}
+		}
+		printf("\n");
+	}
+	return 0;
 }

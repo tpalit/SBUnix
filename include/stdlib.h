@@ -6,5 +6,6 @@
 int main(int argc, char* argv[], char* envp[]);
 void exit(int status);
 void* malloc(u64int);
+int atoi(char*);
 
 #endif
