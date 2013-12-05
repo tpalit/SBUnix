@@ -162,8 +162,10 @@ void do_sleep(u32int sleep_time)
  */
 int do_exec(char* file, char** argv, char** envp)
 {
-	overlay_task(file, CURRENT_TASK);
-	return SUCCESS;
+	if (overlay_task(file, CURRENT_TASK))
+		return SUCCESS;
+	else 
+		return FAILURE;
 }
 
 void do_wait()
