@@ -1,6 +1,9 @@
 /* 
  * The header file for fork()
  */
+/**
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
+ */
 
 #ifndef FORK_H
 #define FORK_H

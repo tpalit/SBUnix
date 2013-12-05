@@ -2,7 +2,7 @@
  * This file contains common typedefs to make life
  * a little easier.
  * 
- * Copyright (c) 2013 by Tapti Palit. All rights reserved.
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
  */
 
 #ifndef COMMON_H

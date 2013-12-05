@@ -1,3 +1,6 @@
+/**
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
+ */
 /*
  * The much required kmalloc function!
  */

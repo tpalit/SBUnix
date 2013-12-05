@@ -22,7 +22,7 @@
 # 64 bit mode. So, we'll manually push the registers!
 # That's so much fun!
 
-# Copyright (c) 2013 by Tapti Palit. All rights reserved.
+# Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
 	
 .text
 

@@ -5,7 +5,7 @@
  * We'll use smart tricks to ensure that the memory 
  * alignment of the GDT descriptor structure is packed
  *
- * Copyright (c) 2013 by Tapti Palit. All rights reserved.
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
  */
 
 #include<common.h>

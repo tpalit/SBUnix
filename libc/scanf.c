@@ -1,3 +1,7 @@
+/**
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
+ */
+
 #include<syscall.h>
 #include<stdio.h>
 #include<stdarg.h>

@@ -1,3 +1,6 @@
+/**
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
+ */
 
 #ifndef _STRING_H
 #define _STRING_H

@@ -1,4 +1,6 @@
-
+/**
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
+ */
 #include<string.h>
 #include<common.h>
 #include<stdlib.h>

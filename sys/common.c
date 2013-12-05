@@ -4,7 +4,7 @@
  * This file will contain the common routines which 
  * will be required all over the world. 
  *
- * Copyright (c) 2013 by Tapti Palit. All rights reserved.
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
  */
 
 

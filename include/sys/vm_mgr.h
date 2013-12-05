@@ -1,3 +1,7 @@
+/**
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
+ */
+
 /*
  * This file will contain the structures for the 
  * four levels of paging hierarchy - PML4, PDP, PD, PT

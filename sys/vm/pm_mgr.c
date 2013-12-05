@@ -1,4 +1,6 @@
-/*
+/**
+ * Copyright (c) 2013 by Tapti Palit, Kaustubh Gharpure. All rights reserved.
+ *
  * This is the physical memory manager.
  * This file will deal with the physical memory management. 
  * Mainly with the breaking up of the physical memory into chunks 
